@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { getItems, deleteItem } from "../services/api";
+import { getItems, deleteItem, updateItem } from "../services/api";
 import AddItem from "./AddItem";
 
 const ItemList = () => {
   const [items, setItems] = useState([]);
+
+  const [editingId, setEditingId] = useState(null);
+  const [editedName, setEditedName] = useState("");
+  const [editedType, setEditedType] = useState("");
+  const [editedRating, setEditedRating] = useState("");
 
   const fetchItems = async () => {
     const data = await getItems();
@@ -13,6 +18,24 @@ const ItemList = () => {
   useEffect(() => {
     fetchItems();
   }, []);
+
+  const handleEditClick = (item) => {
+    setEditingId(item.id);
+    setEditedName(item.name);
+    setEditedType(item.type);
+    setEditedRating(item.rating ?? "");
+  };
+
+  const handleUpdate = async (id) => {
+    await updateItem(id, {
+      name: editedName,
+      type: editedType,
+      rating: editedRating ? Number(editedRating) : null,
+    });
+
+    setEditingId(null);
+    fetchItems();
+  };
 
   return (
     <div>
@@ -27,22 +50,69 @@ const ItemList = () => {
           {items.map((item) => (
             <li
               key={item.id}
-              className="list-group-item d-flex justify-content-between align-items-center"
+              className="list-group-item"
             >
-              <span>
-                <b>{item.name}</b> ({item.type}) — Rating:{" "}
-                {item.rating ?? "N/A"}
-              </span>
+              {editingId === item.id ? (
+                <div className="d-flex flex-column gap-2">
+                  <input
+                    className="form-control"
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                  />
+                  <input
+                    className="form-control"
+                    value={editedType}
+                    onChange={(e) => setEditedType(e.target.value)}
+                  />
+                  <input
+                    className="form-control"
+                    type="number"
+                    value={editedRating}
+                    onChange={(e) => setEditedRating(e.target.value)}
+                  />
 
-              <button
-                className="btn btn-sm btn-danger"
-                onClick={async () => {
-                  await deleteItem(item.id);
-                  fetchItems();
-                }}
-              >
-                Delete
-              </button>
+                  <div className="d-flex gap-2">
+                    <button
+                      className="btn btn-success btn-sm"
+                      onClick={() => handleUpdate(item.id)}
+                    >
+                      Save
+                    </button>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setEditingId(null)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="d-flex justify-content-between align-items-center">
+                  <span>
+                    <b>{item.name}</b> ({item.type}) — Rating:{" "}
+                    {item.rating ?? "N/A"}
+                  </span>
+
+                  <div className="d-flex gap-2">
+                    <button
+                      className="btn btn-warning btn-sm"
+                      onClick={() => handleEditClick(item)}
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={async () => {
+                        await deleteItem(item.id);
+                        fetchItems();
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>
