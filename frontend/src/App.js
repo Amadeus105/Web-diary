@@ -1,27 +1,34 @@
-import ItemList from "./components/ItemList";
-import CustomNavbar from "./components/Navbar";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import CardNavbar from "./components/CardNavbar";
+import Home from "./pages/Home";
+import Completed from "./pages/Completed";
+import About from "./pages/About";
 
 function App() {
   return (
-    <>
-      <CustomNavbar />
+    <Router>
+      <CardNavbar />
 
-      <div style={{ paddingTop: "80px", minHeight: "100vh", background: "#f4f6f8" }}>
-        <div
-          style={{
-            maxWidth: "700px",
-            margin: "0 auto",
-            padding: "40px 20px",
-          }}
-        >
-          <h1 style={{ textAlign: "center", marginBottom: "30px" }}>
-            🎮 Completed Diary
-          </h1>
-
-          <ItemList />
+      <div
+        style={{
+          paddingTop: "80px",
+          minHeight: "100vh",
+          backgroundColor: "var(--bg-color)",
+          color: "var(--text-color)",
+          transition: "background-color 0.3s, color 0.3s",
+        }}
+      >
+        <div className="container py-4">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/completed" element={<Completed />} />
+            <Route path="/about" element={<About />} />
+          </Routes>
         </div>
       </div>
-    </>
+    </Router>
   );
 }
 

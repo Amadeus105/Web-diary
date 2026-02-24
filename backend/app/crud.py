@@ -18,3 +18,17 @@ def delete_item(db: Session, item_id: int):
     db.delete(item)
     db.commit()
     return item
+
+def update_item(db: Session, item_id: int, item_data: schemas.ItemCreate):
+    item = db.query(models.Item).filter(models.Item.id == item_id).first()
+    if not item:
+        return None
+    item.name = item_data.name
+    item.type = item_data.type
+    item.finished_date = item_data.finished_date
+    item.rating = item_data.rating
+    item.notes = item_data.notes
+
+    db.commit()
+    db.refresh(item)
+    return item

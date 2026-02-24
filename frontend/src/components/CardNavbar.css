@@ -1,0 +1,100 @@
+/* Hamburger button */
+.hamburger-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1100;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.line {
+  width: 28px;
+  height: 2px;
+  background: black;
+  transition: 0.3s;
+}
+
+.rotate1 {
+  transform: rotate(45deg) translateY(5px);
+}
+
+.rotate2 {
+  transform: rotate(-45deg) translateY(-5px);
+}
+
+/* Overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 260px;
+  height: 100vh;
+  padding: 40px 20px;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  margin-bottom: 40px;
+}
+
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  font-size: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: 0.3s;
+}
+
+.nav-link:hover {
+  opacity: 0.7;
+}
+
+.theme-button {
+  margin-top: 2rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: var(--button-bg, #111);
+  color: var(--button-text, #fff);
+  cursor: pointer;
+  font-weight: 500;
+  display: block;
+  width: 90%;
+  text-align: center;
+  transition: background 0.3s, color 0.3s;
+}
+
+.theme-button:hover {
+  opacity: 0.8;
+}
+
+.sidebar {
+  background-color: var(--sidebar-bg, #fff);
+  color: var(--text-color, #000);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.nav-link {
+  color: var(--text-color, #000);
+}
