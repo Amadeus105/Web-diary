@@ -18,3 +18,16 @@ class Item(ItemBase):
     class Config:
         from_attributes = True
 
+class SuggestionBase(BaseModel):
+    title: str
+    type: str
+    description: Optional[str] = None
+
+class SuggestionCreate(SuggestionBase):
+    pass
+
+class Suggestion(SuggestionBase):
+    id: int
+
+    class Config:
+        from_attributes = True

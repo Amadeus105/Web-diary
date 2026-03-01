@@ -32,3 +32,13 @@ def update_item(db: Session, item_id: int, item_data: schemas.ItemCreate):
     db.commit()
     db.refresh(item)
     return item
+
+def get_suggestions(db: Session):
+    return db.query(models.Suggestion).all()
+
+def create_suggestion(db: Session, suggestion: schemas.SuggestionCreate):
+    db_suggestion = models.Suggestion(**suggestion.dict())
+    db.add(db_suggestion)
+    db.commit()
+    db.refresh(db_suggestion)
+    return db_suggestion

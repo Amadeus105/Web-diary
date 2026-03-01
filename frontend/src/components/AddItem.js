@@ -5,6 +5,8 @@ const AddItem = ({ onItemAdded }) => {
   const [name, setName] = useState("");
   const [type, setType] = useState("");
   const [rating, setRating] = useState("");
+  const [finishedDate, setFinishedDate] = useState("");
+  const [notes, setNotes] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -13,11 +15,15 @@ const AddItem = ({ onItemAdded }) => {
       name,
       type,
       rating: rating ? Number(rating) : null,
+      finished_date: finishedDate ? finishedDate : null,
+      notes: notes ? notes : null,
     });
 
     setName("");
     setType("");
     setRating("");
+    setFinishedDate("");
+    setNotes("");
     onItemAdded();
   };
 
@@ -43,6 +49,19 @@ const AddItem = ({ onItemAdded }) => {
         type="number"
         value={rating}
         onChange={(e) => setRating(e.target.value)}
+      />
+      <input
+        className="form-control mb-2"
+        placeholder="Finished Date"
+        type="date"
+        value={finishedDate}
+        onChange={(e) => setFinishedDate(e.target.value)}
+      />
+      <textarea
+        className="form-control mb-2"
+        placeholder="Notes"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
       />
       <button className="btn btn-primary">Add</button>
     </form>

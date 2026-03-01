@@ -9,6 +9,8 @@ const ItemList = () => {
   const [editedName, setEditedName] = useState("");
   const [editedType, setEditedType] = useState("");
   const [editedRating, setEditedRating] = useState("");
+  const [editedFinishedDate, setEditedFinishedDate] = useState("");
+  const [editedNotes, setEditedNotes] = useState("");
 
   const fetchItems = async () => {
     const data = await getItems();
@@ -24,6 +26,8 @@ const ItemList = () => {
     setEditedName(item.name);
     setEditedType(item.type);
     setEditedRating(item.rating ?? "");
+    setEditedFinishedDate(item.finished_date ?? "");
+    setEditedNotes(item.notes ?? "");
   };
 
   const handleUpdate = async (id) => {
@@ -31,6 +35,8 @@ const ItemList = () => {
       name: editedName,
       type: editedType,
       rating: editedRating ? Number(editedRating) : null,
+      finished_date: editedFinishedDate ? editedFinishedDate : null,
+      notes: editedNotes ? editedNotes : null,
     });
 
     setEditingId(null);
@@ -48,10 +54,7 @@ const ItemList = () => {
       ) : (
         <ul className="list-group">
           {items.map((item) => (
-            <li
-              key={item.id}
-              className="list-group-item"
-            >
+            <li key={item.id} className="list-group-item">
               {editingId === item.id ? (
                 <div className="d-flex flex-column gap-2">
                   <input
@@ -69,6 +72,17 @@ const ItemList = () => {
                     type="number"
                     value={editedRating}
                     onChange={(e) => setEditedRating(e.target.value)}
+                  />
+                  <input
+                    className="form-control"
+                    type="date"
+                    value={editedFinishedDate}
+                    onChange={(e) => setEditedFinishedDate(e.target.value)}
+                  />
+                  <textarea
+                    className="form-control"
+                    value={editedNotes}
+                    onChange={(e) => setEditedNotes(e.target.value)}
                   />
 
                   <div className="d-flex gap-2">
@@ -90,7 +104,9 @@ const ItemList = () => {
                 <div className="d-flex justify-content-between align-items-center">
                   <span>
                     <b>{item.name}</b> ({item.type}) — Rating:{" "}
-                    {item.rating ?? "N/A"}
+                    {item.rating ?? "N/A"} — Date:{" "}
+                    {item.finished_date ?? "N/A"} — Notes:{" "}
+                    {item.notes ?? "N/A"}
                   </span>
 
                   <div className="d-flex gap-2">

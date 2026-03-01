@@ -12,3 +12,10 @@ class Item(Base):
     rating = Column(Integer, nullable=True)
     notes = Column(String, nullable=True)
 
+class Suggestion(Base):
+    __tablename__ = "suggestions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    type = Column(String, nullable=False)  # "book" or "game"
+    description = Column(String, nullable=True)
