@@ -11,6 +11,8 @@ node_modules/
 build/
 .env
 
+backend/.env
+
 # OS
 .DS_Store
 Thumbs.db
