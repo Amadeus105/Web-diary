@@ -24,20 +24,28 @@ def add_suggestion(suggestion: schemas.SuggestionCreate, db: Session = Depends(g
 
 @router.post("/suggestions/ai")
 async def get_ai_suggestions(db: Session = Depends(get_db)):
-    # Get all completed items
     items = crud.get_items(db)
+
+    if not items:
+        return []
+
     items_text = "\n".join([f"- {item.name} ({item.type})" for item in items])
 
-    prompt = f"""Based on these completed books and games:
-{items_text}
+    prompt = f"""Ты персональный рекомендатор книг и игр.
 
-Suggest 5 similar books or games the user might enjoy. 
-For each suggestion give: title, type (book or game), and a one sentence description.
-Format each as: Title | type | description"""
+    Пользователь уже завершил следующие книги и игры:
+    {items_text}
+
+    Основываясь на его вкусах и предпочтениях, порекомендуй 5 книг или игр которые ему понравятся.
+    Начни ответ с короткой фразы о его вкусах, например: "Судя по вашим предпочтениям, вам нравятся..."
+    Затем дай 5 рекомендаций.
+
+    Для каждой рекомендации используй формат: Title | type | description
+    Где type это "book" или "game", а description — одно предложение почему это ему подойдёт."""
 
     ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    async with httpx.AsyncClient(timeout=300.0) as client:
         response = await client.post(
             f"{ollama_url}/api/generate",
             json={
@@ -49,9 +57,11 @@ Format each as: Title | type | description"""
 
     result = response.json()["response"]
 
-    # Parse the response into suggestions
+    lines = result.strip().split("\n")
+    intro = ""
     suggestions = []
-    for line in result.strip().split("\n"):
+
+    for line in lines:
         parts = line.split("|")
         if len(parts) == 3:
             suggestions.append({
@@ -59,5 +69,7 @@ Format each as: Title | type | description"""
                 "type": parts[1].strip(),
                 "description": parts[2].strip()
             })
+        elif line.strip() and not intro:
+            intro = line.strip()
 
-    return suggestions
+    return {"intro": intro, "suggestions": suggestions}

@@ -64,6 +64,7 @@ const toggleTheme = () => {
   const items = [
     { label: "Home", to: "/" },
     { label: "Completed", to: "/completed" },
+      { label: "Suggestions", to: "/suggestions" },
     { label: "About", to: "/about" },
   ];
 

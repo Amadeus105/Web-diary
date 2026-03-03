@@ -5,6 +5,7 @@ import CardNavbar from "./components/CardNavbar";
 import Home from "./pages/Home";
 import Completed from "./pages/Completed";
 import About from "./pages/About";
+import SuggestionsPage from "./pages/SuggestionsPage";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/completed" element={<Completed />} />
             <Route path="/about" element={<About />} />
+            <Route path="/suggestions" element={<SuggestionsPage />} />
           </Routes>
         </div>
       </div>
