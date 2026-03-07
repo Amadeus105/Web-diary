@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
-from .routers import items,suggestions
+from .routers import items, suggestions, auth, admin
 
 Base.metadata.create_all(bind=engine)
 
@@ -15,5 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(items.router)
 app.include_router(suggestions.router)
+app.include_router(admin.router)

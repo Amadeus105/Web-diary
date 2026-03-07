@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import date
 
+
 class ItemBase(BaseModel):
     name: str
     type: str
@@ -14,9 +15,11 @@ class ItemCreate(ItemBase):
 
 class Item(ItemBase):
     id: int
+    user_id: int
 
     class Config:
         from_attributes = True
+
 
 class SuggestionBase(BaseModel):
     title: str
@@ -28,6 +31,26 @@ class SuggestionCreate(SuggestionBase):
 
 class Suggestion(SuggestionBase):
     id: int
+    user_id: int
 
     class Config:
         from_attributes = True
+
+
+class UserBase(BaseModel):
+    username: str
+
+class UserCreate(UserBase):
+    password: str
+
+class User(UserBase):
+    id: int
+    is_admin: bool
+
+    class Config:
+        from_attributes = True
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
