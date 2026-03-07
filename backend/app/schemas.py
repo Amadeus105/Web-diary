@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import date
 
@@ -16,9 +16,7 @@ class ItemCreate(ItemBase):
 class Item(ItemBase):
     id: int
     user_id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SuggestionBase(BaseModel):
@@ -32,9 +30,7 @@ class SuggestionCreate(SuggestionBase):
 class Suggestion(SuggestionBase):
     id: int
     user_id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserBase(BaseModel):
@@ -46,9 +42,7 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
     is_admin: bool
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Token(BaseModel):

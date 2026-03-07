@@ -7,7 +7,7 @@ def get_items(db: Session, user_id: int):
 
 
 def create_item(db: Session, item: schemas.ItemCreate, user_id: int):
-    db_item = models.Item(**item.dict(), user_id=user_id)
+    db_item = models.Item(**item.model_dump(), user_id=user_id)
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
@@ -48,7 +48,7 @@ def get_suggestions(db: Session, user_id: int):
 
 
 def create_suggestion(db: Session, suggestion: schemas.SuggestionCreate, user_id: int):
-    db_suggestion = models.Suggestion(**suggestion.dict(), user_id=user_id)
+    db_suggestion = models.Suggestion(**suggestion.model_dump(), user_id=user_id)
     db.add(db_suggestion)
     db.commit()
     db.refresh(db_suggestion)
