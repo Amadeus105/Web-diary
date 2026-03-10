@@ -55,6 +55,7 @@ const CardNavbar = () => {
     { label: "Completed", to: "/completed" },
     { label: "Suggestions", to: "/suggestions" },
     { label: "About", to: "/about" },
+    { label: "Catalog", to: "/catalog" },
     ...(user?.is_admin ? [{ label: "Admin", to: "/admin" }] : []),
   ];
 

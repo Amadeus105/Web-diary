@@ -26,6 +26,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       OLLAMA_URL: "http://host.docker.internal:11434"
       SECRET_KEY: ${SECRET_KEY}
+      RAWG_API_KEY: ${RAWG_API_KEY}
     ports:
       - "8000:8000"
 

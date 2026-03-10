@@ -80,3 +80,19 @@ export const getMe = async (token) => {
   });
   return response.data;
 };
+
+export const searchBooks = async (query) => {
+  const response = await axios.get(`${BASE_URL}/catalog/books`, {
+    params: { q: query },
+    headers: authHeaders()
+  });
+  return response.data;
+};
+
+export const searchGames = async (query) => {
+  const response = await axios.get(`${BASE_URL}/catalog/games`, {
+    params: { q: query },
+    headers: authHeaders()
+  });
+  return response.data;
+};
