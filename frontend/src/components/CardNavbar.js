@@ -5,9 +5,8 @@ import { GoArrowUpRight } from "react-icons/go";
 import { useAuth } from "../context/AuthContext";
 import "./CardNavbar.css";
 
-const CardNavbar = () => {
+const CardNavbar = ({ theme, toggleTheme }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [theme, setTheme] = useState("light");
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -36,12 +35,6 @@ const CardNavbar = () => {
     if (!tl) return;
     if (!isOpen) { tl.play(); setIsOpen(true); }
     else { tl.reverse(); setIsOpen(false); }
-  };
-
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
   };
 
   const handleLogout = () => {

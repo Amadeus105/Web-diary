@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
+import ParticlesBackground from "./components/Particles";
 import CardNavbar from "./components/CardNavbar";
 import Home from "./pages/Home";
 import Completed from "./pages/Completed";
@@ -22,15 +23,27 @@ const AdminRoute = ({ children }) => {
 };
 
 function App() {
+  const [theme, setTheme] = useState("light");
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+  };
+
   return (
     <Router>
-      <CardNavbar />
+      {theme === "dark" && <ParticlesBackground />}
+
+      <CardNavbar theme={theme} toggleTheme={toggleTheme} />
       <div style={{
         paddingTop: "80px",
         minHeight: "100vh",
-        backgroundColor: "var(--bg-color)",
+        backgroundColor: "transparent",
         color: "var(--text-color)",
         transition: "background-color 0.3s, color 0.3s",
+        position: "relative",
+        zIndex: 1,
       }}>
         <div className="container py-4">
           <Routes>

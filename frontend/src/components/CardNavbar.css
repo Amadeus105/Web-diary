@@ -13,7 +13,7 @@
 .line {
   width: 28px;
   height: 2px;
-  background: black;
+  background: var(--text-color, #000);
   transition: 0.3s;
 }
 
@@ -97,4 +97,16 @@
 
 .nav-link {
   color: var(--text-color, #000);
+}
+
+.hamburger-button {
+  z-index: 100;
+}
+
+.sidebar {
+  z-index: 99;
+}
+
+.overlay {
+  z-index: 98;
 }

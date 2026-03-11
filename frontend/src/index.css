@@ -32,3 +32,21 @@ body {
   color: var(--text-color);
   transition: background-color 0.3s, color 0.3s;
 }
+
+/* Light mode (default) */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --sidebar-bg: #ffffff;
+  --button-bg: #111111;
+  --button-text: #ffffff;
+}
+
+/* Dark mode */
+[data-theme="dark"] {
+  --bg-color: #0a0a0a;
+  --text-color: #ffffff;
+  --sidebar-bg: #111111;
+  --button-bg: #333333;
+  --button-text: #ffffff;
+}
