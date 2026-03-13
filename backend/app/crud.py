@@ -53,3 +53,30 @@ def create_suggestion(db: Session, suggestion: schemas.SuggestionCreate, user_id
     db.commit()
     db.refresh(db_suggestion)
     return db_suggestion
+
+def get_songs(db: Session, user_id: int, list_type: str, year: int = None):
+    query = db.query(models.Song).filter(
+        models.Song.user_id == user_id,
+        models.Song.list_type == list_type
+    )
+    if year:
+        query = query.filter(models.Song.year == year)
+    return query.order_by(models.Song.rank).all()
+
+def create_song(db: Session, song: schemas.SongCreate, user_id: int):
+    db_song = models.Song(**song.model_dump(), user_id=user_id)
+    db.add(db_song)
+    db.commit()
+    db.refresh(db_song)
+    return db_song
+
+def delete_song(db: Session, song_id: int, user_id: int):
+    song = db.query(models.Song).filter(
+        models.Song.id == song_id,
+        models.Song.user_id == user_id
+    ).first()
+    if not song:
+        return None
+    db.delete(song)
+    db.commit()
+    return song

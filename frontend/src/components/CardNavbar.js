@@ -49,6 +49,7 @@ const CardNavbar = ({ theme, toggleTheme }) => {
     { label: "Suggestions", to: "/suggestions" },
     { label: "About", to: "/about" },
     { label: "Catalog", to: "/catalog" },
+    { label: "Music", to: "/music" },
     ...(user?.is_admin ? [{ label: "Admin", to: "/admin" }] : []),
   ];
 

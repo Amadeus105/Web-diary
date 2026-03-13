@@ -11,6 +11,7 @@ import SuggestionsPage from "./pages/SuggestionsPage";
 import LoginPage from "./pages/LoginPage";
 import AdminPage from "./pages/AdminPage";
 import CatalogPage from "./pages/CatalogPage";
+import MusicPage from "./pages/MusicPage";
 
 const ProtectedRoute = ({ children }) => {
   const { token } = useAuth();
@@ -54,6 +55,7 @@ function App() {
             <Route path="/suggestions" element={<ProtectedRoute><SuggestionsPage /></ProtectedRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
             <Route path="/catalog" element={<ProtectedRoute><CatalogPage /></ProtectedRoute>} />
+            <Route path="/music" element={<ProtectedRoute><MusicPage /></ProtectedRoute>} />
           </Routes>
         </div>
       </div>

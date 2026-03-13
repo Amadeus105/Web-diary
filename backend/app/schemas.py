@@ -48,3 +48,20 @@ class User(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class SongBase(BaseModel):
+    title: str
+    artist: str
+    cover_url: Optional[str] = None
+    link: Optional[str] = None
+    year: Optional[int] = None
+    rank: Optional[int] = None
+    list_type: str
+
+class SongCreate(SongBase):
+    pass
+
+class Song(SongBase):
+    id: int
+    user_id: int
+    model_config = ConfigDict(from_attributes=True)

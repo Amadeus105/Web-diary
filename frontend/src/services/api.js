@@ -96,3 +96,26 @@ export const searchGames = async (query) => {
   });
   return response.data;
 };
+
+export const getSongs = async (listType, year = null) => {
+  const params = { list_type: listType };
+  if (year) params.year = year;
+  const response = await axios.get(`${BASE_URL}/music/`, {
+    params,
+    headers: authHeaders()
+  });
+  return response.data;
+};
+
+export const createSong = async (song) => {
+  const response = await axios.post(`${BASE_URL}/music/`, song, {
+    headers: authHeaders()
+  });
+  return response.data;
+};
+
+export const deleteSong = async (id) => {
+  await axios.delete(`${BASE_URL}/music/${id}`, {
+    headers: authHeaders()
+  });
+};
