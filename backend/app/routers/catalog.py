@@ -5,15 +5,24 @@ import os
 router = APIRouter(prefix="/catalog")
 
 RAWG_API_KEY = os.getenv("RAWG_API_KEY")
+GOOGLE_BOOKS_API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
 
 @router.get("/books")
 async def search_books(q: str = Query(...)):
+    params = {"q": q, "maxResults": 20}
+    if GOOGLE_BOOKS_API_KEY:
+        params["key"] = GOOGLE_BOOKS_API_KEY
+
     async with httpx.AsyncClient() as client:
         response = await client.get(
             "https://www.googleapis.com/books/v1/volumes",
-            params={"q": q, "maxResults": 20}
+            params=params
         )
     data = response.json()
+
+    if "items" not in data:
+        return []
+
     books = []
     for item in data.get("items", []):
         info = item.get("volumeInfo", {})

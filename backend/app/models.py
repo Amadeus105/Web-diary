@@ -24,10 +24,10 @@ class Item(Base):
     finished_date = Column(Date, nullable=True)
     rating = Column(Integer, nullable=True)
     notes = Column(String, nullable=True)
+    cover_url = Column(String, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     owner = relationship("User", back_populates="items")
-
 
 class Suggestion(Base):
     __tablename__ = "suggestions"

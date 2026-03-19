@@ -7,6 +7,7 @@ const AddItem = ({ onItemAdded }) => {
   const [rating, setRating] = useState("");
   const [finishedDate, setFinishedDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [coverUrl, setCoverUrl] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,6 +18,7 @@ const AddItem = ({ onItemAdded }) => {
       rating: rating ? Number(rating) : null,
       finished_date: finishedDate ? finishedDate : null,
       notes: notes ? notes : null,
+      cover_url: coverUrl || null,
     });
 
     setName("");
@@ -25,6 +27,7 @@ const AddItem = ({ onItemAdded }) => {
     setFinishedDate("");
     setNotes("");
     onItemAdded();
+    setCoverUrl("");
   };
 
   return (
@@ -43,6 +46,12 @@ const AddItem = ({ onItemAdded }) => {
         onChange={(e) => setType(e.target.value)}
         required
       />
+        <input
+          className="form-control mb-2"
+          placeholder="Cover URL (optional)"
+          value={coverUrl}
+          onChange={(e) => setCoverUrl(e.target.value)}
+        />
       <input
         className="form-control mb-2"
         placeholder="Rating"

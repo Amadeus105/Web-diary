@@ -50,3 +50,13 @@ body {
   --button-bg: #333333;
   --button-text: #ffffff;
 }
+
+:root {
+  --block-bg: rgba(0,0,0,0.05);
+  --block-border: rgba(0,0,0,0.1);
+}
+
+[data-theme="dark"] {
+  --block-bg: rgba(255,255,255,0.04);
+  --block-border: rgba(255,255,255,0.08);
+}

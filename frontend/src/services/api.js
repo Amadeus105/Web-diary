@@ -20,8 +20,14 @@ export const login = async (username, password) => {
 };
 
 // Items
-export const getItems = async () => {
-  const response = await axios.get(`${BASE_URL}/items/`, { headers: authHeaders() });
+export const getItems = async (type = null, limit = null) => {
+  const params = {};
+  if (type) params.type = type;
+  if (limit) params.limit = limit;
+  const response = await axios.get(`${BASE_URL}/items/`, {
+    params,
+    headers: authHeaders()
+  });
   return response.data;
 };
 

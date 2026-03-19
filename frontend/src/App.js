@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
@@ -24,11 +24,18 @@ const AdminRoute = ({ children }) => {
 };
 
 function App() {
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("theme") || "light";
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
     document.documentElement.setAttribute("data-theme", newTheme);
   };
 
@@ -40,7 +47,7 @@ function App() {
       <div style={{
         paddingTop: "80px",
         minHeight: "100vh",
-        backgroundColor: "transparent",
+        backgroundColor: theme === "dark" ? "transparent" : "var(--bg-color)",
         color: "var(--text-color)",
         transition: "background-color 0.3s, color 0.3s",
         position: "relative",

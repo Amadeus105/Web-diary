@@ -9,6 +9,7 @@ class ItemBase(BaseModel):
     finished_date: Optional[date] = None
     rating: Optional[int] = None
     notes: Optional[str] = None
+    cover_url: Optional[str] = None
 
 class ItemCreate(ItemBase):
     pass

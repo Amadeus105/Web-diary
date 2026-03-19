@@ -27,6 +27,7 @@ services:
       OLLAMA_URL: "http://host.docker.internal:11434"
       SECRET_KEY: ${SECRET_KEY}
       RAWG_API_KEY: ${RAWG_API_KEY}
+      GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY}
     ports:
       - "8000:8000"
 
