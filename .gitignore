@@ -16,3 +16,8 @@ backend/.env
 # OS
 .DS_Store
 Thumbs.db
+
+frontend/public/me.jpg
+frontend/src/assets/
+*.png
+*.jpg

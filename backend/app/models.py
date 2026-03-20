@@ -14,6 +14,7 @@ class User(Base):
     items = relationship("Item", back_populates="owner")
     suggestions = relationship("Suggestion", back_populates="owner")
     songs = relationship("Song", back_populates="owner")
+    profile = relationship("UserProfile", back_populates="owner", uselist=False)
 
 class Item(Base):
     __tablename__ = "items"
@@ -54,3 +55,17 @@ class Song(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     owner = relationship("User", back_populates="songs")
+
+class UserProfile(Base):
+    __tablename__ = "profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    name = Column(String, nullable=True)
+    title = Column(String, nullable=True)
+    handle = Column(String, nullable=True)
+    status = Column(String, nullable=True)
+    avatar_url = Column(String, nullable=True)
+    github_url = Column(String, nullable=True)
+
+    owner = relationship("User", back_populates="profile")

@@ -66,3 +66,19 @@ class Song(SongBase):
     id: int
     user_id: int
     model_config = ConfigDict(from_attributes=True)
+
+class ProfileBase(BaseModel):
+    name: Optional[str] = None
+    title: Optional[str] = None
+    handle: Optional[str] = None
+    status: Optional[str] = None
+    avatar_url: Optional[str] = None
+    github_url: Optional[str] = None
+
+class ProfileCreate(ProfileBase):
+    pass
+
+class Profile(ProfileBase):
+    id: int
+    user_id: int
+    model_config = ConfigDict(from_attributes=True)

@@ -125,3 +125,17 @@ export const deleteSong = async (id) => {
     headers: authHeaders()
   });
 };
+
+export const getProfile = async () => {
+  const response = await axios.get(`${BASE_URL}/profile/`, {
+    headers: authHeaders()
+  });
+  return response.data;
+};
+
+export const saveProfile = async (profile) => {
+  const response = await axios.post(`${BASE_URL}/profile/`, profile, {
+    headers: authHeaders()
+  });
+  return response.data;
+};

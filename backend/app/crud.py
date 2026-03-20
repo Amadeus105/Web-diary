@@ -85,3 +85,22 @@ def delete_song(db: Session, song_id: int, user_id: int):
     db.delete(song)
     db.commit()
     return song
+
+def get_profile(db: Session, user_id: int):
+    return db.query(models.UserProfile).filter(
+        models.UserProfile.user_id == user_id
+    ).first()
+
+def upsert_profile(db: Session, user_id: int, profile_data: schemas.ProfileCreate):
+    profile = db.query(models.UserProfile).filter(
+        models.UserProfile.user_id == user_id
+    ).first()
+    if profile:
+        for key, value in profile_data.model_dump().items():
+            setattr(profile, key, value)
+    else:
+        profile = models.UserProfile(**profile_data.model_dump(), user_id=user_id)
+        db.add(profile)
+    db.commit()
+    db.refresh(profile)
+    return profile
