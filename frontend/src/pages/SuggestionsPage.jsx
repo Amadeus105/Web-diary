@@ -1,107 +1,134 @@
-import React, { useEffect, useState } from "react";
-import { getSuggestions, createSuggestion, getAISuggestions } from "../services/api";
+import { useState } from "react";
+import axios from "axios";
+
+const BASE_URL = "http://localhost:8000";
+const getToken = () => localStorage.getItem("token");
 
 const SuggestionsPage = () => {
+  const [filterType, setFilterType] = useState("both");
+  const [loading, setLoading] = useState(false);
+  const [intro, setIntro] = useState("");
   const [suggestions, setSuggestions] = useState([]);
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState("book");
-  const [description, setDescription] = useState("");
-  const [aiSuggestions, setAiSuggestions] = useState([]);
-  const [loadingAI, setLoadingAI] = useState(false);
+  const [error, setError] = useState("");
 
-  const fetchSuggestions = async () => {
-    const data = await getSuggestions();
-    setSuggestions(data);
+  const handleGetSuggestions = async () => {
+    setLoading(true);
+    setError("");
+    setSuggestions([]);
+    setIntro("");
+
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/suggestions/ai?filter_type=${filterType}`,
+        {},
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      setIntro(response.data.intro);
+      setSuggestions(response.data.suggestions);
+    } catch (e) {
+      setError("Failed to get suggestions. Try again.");
+    }
+
+    setLoading(false);
   };
 
-  useEffect(() => {
-    fetchSuggestions();
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await createSuggestion({ title, type, description });
-    setTitle("");
-    setType("book");
-    setDescription("");
-    fetchSuggestions();
-  };
-
-const [aiIntro, setAiIntro] = useState("");
-
-const handleAISuggestions = async () => {
-    setLoadingAI(true);
-    const data = await getAISuggestions();
-    setAiIntro(data.intro);
-    setAiSuggestions(data.suggestions);
-    setLoadingAI(false);
-};
   return (
-    <div>
-      <h2 className="mb-4">Suggestions</h2>
+    <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+      <h2 style={{ color: "var(--text-color)", marginBottom: "8px" }}>
+        🤖 AI Recommendations
+      </h2>
+      <p style={{ color: "var(--text-color)", opacity: 0.6, marginBottom: "30px" }}>
+        Get personalized recommendations based on your completed list
+      </p>
 
-      <form onSubmit={handleSubmit} className="mb-4">
-        <input
-          className="form-control mb-2"
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-        <select
-          className="form-control mb-2"
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-        >
-          <option value="book">Book</option>
-          <option value="game">Game</option>
-        </select>
-        <textarea
-          className="form-control mb-2"
-          placeholder="Description (optional)"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-        <button className="btn btn-primary">Add Suggestion</button>
-      </form>
+      {/* Filter buttons */}
+      <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+        {["both", "book", "game"].map(type => (
+          <button
+            key={type}
+            onClick={() => setFilterType(type)}
+            style={{
+              padding: "8px 20px",
+              borderRadius: "20px",
+              border: "none",
+              cursor: "pointer",
+              fontWeight: "600",
+              background: filterType === type ? "#7c3aed" : "var(--block-bg, rgba(0,0,0,0.1))",
+              color: filterType === type ? "white" : "var(--text-color)",
+              transition: "all 0.2s"
+            }}
+          >
+            {type === "both" ? "📚🎮 Both" : type === "book" ? "📚 Books" : "🎮 Games"}
+          </button>
+        ))}
+      </div>
 
-      <h4>My Suggestions</h4>
-      {suggestions.length === 0 ? (
-        <p>No suggestions yet</p>
-      ) : (
-        <ul className="list-group mb-4">
-          {suggestions.map((s) => (
-            <li key={s.id} className="list-group-item">
-              <b>{s.title}</b> ({s.type})
-              {s.description && <p className="mb-0 text-muted">{s.description}</p>}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <h4>AI Recommendations</h4>
+      {/* Get button */}
       <button
-    className="btn btn-success mb-3"
-    onClick={handleAISuggestions}
-    disabled={loadingAI}
-    >
-    {loadingAI ? "⏳ AI is thinking, this may take a minute..." : "Get AI Recommendations"}
+        onClick={handleGetSuggestions}
+        disabled={loading}
+        style={{
+          background: loading ? "#555" : "#7c3aed",
+          color: "white",
+          border: "none",
+          borderRadius: "10px",
+          padding: "14px 32px",
+          fontSize: "16px",
+          fontWeight: "bold",
+          cursor: loading ? "not-allowed" : "pointer",
+          marginBottom: "30px",
+          transition: "background 0.2s"
+        }}
+      >
+        {loading ? "⏳ Getting recommendations..." : "✨ Get Recommendations"}
       </button>
 
-     {aiIntro && (
-    <p className="text-muted fst-italic mb-3">{aiIntro}</p>
-)}
+      {error && <div className="alert alert-danger">{error}</div>}
 
-{aiSuggestions.length > 0 && (
-    <ul className="list-group">
-        {aiSuggestions.map((s, index) => (
-            <li key={index} className="list-group-item">
-                <b>{s.title}</b> ({s.type})
-                {s.description && <p className="mb-0 text-muted">{s.description}</p>}
-            </li>
-        ))}
-    </ul>
-)}
+      {/* Intro */}
+      {intro && (
+        <p style={{
+          color: "var(--text-color)",
+          opacity: 0.8,
+          fontStyle: "italic",
+          marginBottom: "20px",
+          padding: "16px",
+          background: "var(--block-bg, rgba(0,0,0,0.05))",
+          borderRadius: "10px",
+          border: "1px solid var(--block-border, rgba(0,0,0,0.1))"
+        }}>
+          {intro}
+        </p>
+      )}
+
+      {/* Suggestions */}
+      {suggestions.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {suggestions.map((s, i) => (
+            <div key={i} style={{
+              background: "var(--block-bg, rgba(0,0,0,0.05))",
+              border: "1px solid var(--block-border, rgba(0,0,0,0.1))",
+              borderRadius: "12px",
+              padding: "16px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: "16px"
+            }}>
+              <span style={{ fontSize: "28px" }}>
+                {s.type === "book" ? "📚" : "🎮"}
+              </span>
+              <div>
+                <div style={{ fontWeight: "bold", color: "var(--text-color)", fontSize: "16px" }}>
+                  {s.title}
+                </div>
+                <div style={{ color: "var(--text-color)", opacity: 0.6, fontSize: "13px", marginTop: "4px" }}>
+                  {s.description}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

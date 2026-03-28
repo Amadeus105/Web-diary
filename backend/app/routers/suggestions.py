@@ -1,56 +1,73 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from .. import crud, schemas, models
+from typing import Optional
+from .. import crud, models
 from ..auth_utils import get_db, get_current_user
 import httpx
 import os
 
 router = APIRouter()
 
-@router.get("/suggestions/", response_model=list[schemas.Suggestion])
-def read_suggestions(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return crud.get_suggestions(db, user_id=current_user.id)
-
-@router.post("/suggestions/", response_model=schemas.Suggestion)
-def add_suggestion(suggestion: schemas.SuggestionCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    return crud.create_suggestion(db, suggestion, user_id=current_user.id)
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 @router.post("/suggestions/ai")
-async def get_ai_suggestions(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def get_ai_suggestions(
+    filter_type: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
     items = crud.get_items(db, user_id=current_user.id)
 
     if not items:
         return {"intro": "Add some completed items first!", "suggestions": []}
 
+    # Filter by type if specified
+    if filter_type and filter_type != "both":
+        items = [i for i in items if i.type.lower() == filter_type.lower()]
+
+    if not items:
+        return {"intro": f"No {filter_type}s in your completed list yet!", "suggestions": []}
+
     items_text = "\n".join([f"- {item.name} ({item.type})" for item in items])
 
-    prompt = f"""Ты персональный рекомендатор книг и игр.
+    if filter_type == "book":
+        request_type = "5 books"
+    elif filter_type == "game":
+        request_type = "5 games"
+    else:
+        request_type = "3 books and 3 games"
 
-Пользователь уже завершил следующие книги и игры:
+    prompt = f"""Based on these completed items:
 {items_text}
 
-Основываясь на его вкусах и предпочтениях, порекомендуй 5 книг или игр которые ему понравятся.
-Начни ответ с короткой фразой о его вкусах, например: "Судя по вашим предпочтениям, вам нравятся..."
-Затем дай 5 рекомендаций.
+Recommend {request_type} the user would enjoy based on their taste.
+Start with one sentence about their preferences.
+Then list recommendations in this exact format on separate lines:
+Title | type | one sentence why they would like it
 
-Для каждой рекомендации используй формат: Title | type | description
-Где type это "book" или "game", а description — одно предложение почему это ему подойдёт."""
+Where type is exactly "book" or "game"."""
 
-    ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
-
-    async with httpx.AsyncClient(timeout=300.0) as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.post(
-            f"{ollama_url}/api/generate",
-            json={"model": "llama3", "prompt": prompt, "stream": False}
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "google/gemma-3-4b-it:free",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 500
+            }
         )
+
     data = response.json()
-    print("Ollama response:", data)  # temporary debug log
+    print("OpenRouter response:", data)  # add this
 
-    if "response" not in data:
-        return {"intro": f"Ollama error: {data}", "suggestions": []}
+    if "choices" not in data:
+        raise HTTPException(status_code=500, detail=f"OpenRouter error: {data}")
 
-
-    result = response.json()["response"]
+    result = data["choices"][0]["message"]["content"]
     lines = result.strip().split("\n")
     intro = ""
     suggestions = []
@@ -63,7 +80,7 @@ async def get_ai_suggestions(db: Session = Depends(get_db), current_user: models
                 "type": parts[1].strip(),
                 "description": parts[2].strip()
             })
-        elif line.strip() and not intro:
+        elif line.strip() and not intro and "|" not in line:
             intro = line.strip()
 
     return {"intro": intro, "suggestions": suggestions}

@@ -63,7 +63,7 @@ const CardNavbar = ({ theme, toggleTheme }) => {
       <div ref={overlayRef} className="overlay" onClick={toggleMenu} />
 
       <div ref={sidebarRef} className="sidebar">
-        <h2 className="logo">🎮 Game Diary</h2>
+        <h2 className="logo">🎮 Web-Diary</h2>
 
         <div className="nav-links">
           {navItems.map((item) => (
