@@ -10,11 +10,13 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_admin = Column(Boolean, default=False)
+    telegram_id = Column(String, nullable=True, unique=True)
 
     items = relationship("Item", back_populates="owner")
     suggestions = relationship("Suggestion", back_populates="owner")
     songs = relationship("Song", back_populates="owner")
     profile = relationship("UserProfile", back_populates="owner", uselist=False)
+
 
 class Item(Base):
     __tablename__ = "items"
@@ -30,6 +32,7 @@ class Item(Base):
 
     owner = relationship("User", back_populates="items")
 
+
 class Suggestion(Base):
     __tablename__ = "suggestions"
 
@@ -41,6 +44,7 @@ class Suggestion(Base):
 
     owner = relationship("User", back_populates="suggestions")
 
+
 class Song(Base):
     __tablename__ = "songs"
 
@@ -49,12 +53,13 @@ class Song(Base):
     artist = Column(String, nullable=False)
     cover_url = Column(String, nullable=True)
     link = Column(String, nullable=True)
-    year = Column(Integer, nullable=True)  # for yearly list
+    year = Column(Integer, nullable=True)
     rank = Column(Integer, nullable=True)
-    list_type = Column(String, nullable=False)  # "top100" or "yearly"
+    list_type = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     owner = relationship("User", back_populates="songs")
+
 
 class UserProfile(Base):
     __tablename__ = "profiles"
