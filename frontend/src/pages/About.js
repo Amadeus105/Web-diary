@@ -106,7 +106,7 @@ const About = () => {
               <li>🐘 Database: PostgreSQL</li>
               <li>🐳 Deployment: Docker</li>
               <li>🔐 Auth: JWT</li>
-              <li>🤖 AI: Ollama (llama3)</li>
+              <li>🤖 AI: OpenRouter</li>
             </ul>
           </div>
         </div>

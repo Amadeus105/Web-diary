@@ -1,24 +1,32 @@
 :root {
-  --bg-color: #f4f4f4;
-  --text-color: #000;
-  --sidebar-bg: #fff;
-  --button-bg: #111;
-  --button-text: #fff;
+  --bg-color: #f0f0f5;
+  --text-color: #1a1a2e;
+  --sidebar-bg: #ffffff;
+  --button-bg: #111111;
+  --button-text: #ffffff;
+  --block-bg: rgba(255, 255, 255, 0.8);
+  --block-border: rgba(0, 0, 0, 0.08);
+  --vignette-color: rgba(0, 0, 0, 0.08);
+  --animated-item-bg: rgba(0,0,0,0.03);
 }
 
 [data-theme="dark"] {
-  --bg-color: #000;
-  --text-color: #fff;
-  --sidebar-bg: #111;
-  --button-bg: #fff;
-  --button-text: #000;
+  --bg-color: #0a0a0a;
+  --text-color: #ffffff;
+  --sidebar-bg: #111111;
+  --button-bg: #333333;
+  --button-text: #ffffff;
+  --block-bg: rgba(255, 255, 255, 0.04);
+  --block-border: rgba(255, 255, 255, 0.08);
+  --vignette-color: rgba(0, 0, 0, 0.4);
+  --animated-item-bg: #170d27;
 }
 
 body {
   margin: 0;
   font-family: sans-serif;
-  background-color: var(--bg-color, #f4f4f4);
-  color: var(--text-color, #000);
+  background-color: var(--bg-color);
+  color: var(--text-color);
   transition: background-color 0.3s, color 0.3s;
 }
 
@@ -27,36 +35,25 @@ body {
   color: var(--text-color);
   transition: background 0.3s, color 0.3s;
 }
-.main-container {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  transition: background-color 0.3s, color 0.3s;
+
+.glass-block {
+  background: var(--block-bg);
+  border: 1px solid var(--block-border);
+  border-radius: 16px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s;
 }
 
-/* Light mode (default) */
-:root {
-  --bg-color: #ffffff;
-  --text-color: #000000;
-  --sidebar-bg: #ffffff;
-  --button-bg: #111111;
-  --button-text: #ffffff;
+.glass-block:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-/* Dark mode */
-[data-theme="dark"] {
-  --bg-color: #0a0a0a;
-  --text-color: #ffffff;
-  --sidebar-bg: #111111;
-  --button-bg: #333333;
-  --button-text: #ffffff;
+[data-theme="dark"] .item {
+  background-color: #170d27;
 }
 
-:root {
-  --block-bg: rgba(0,0,0,0.05);
-  --block-border: rgba(0,0,0,0.1);
-}
-
-[data-theme="dark"] {
-  --block-bg: rgba(255,255,255,0.04);
-  --block-border: rgba(255,255,255,0.08);
+:root .item {
+  background-color: transparent;
 }

@@ -4,6 +4,7 @@ import { useAuth } from "./context/AuthContext";
 
 import ParticlesBackground from "./components/Particles";
 import CardNavbar from "./components/CardNavbar";
+import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Completed from "./pages/Completed";
 import About from "./pages/About";
@@ -43,7 +44,19 @@ function App() {
     <Router>
       {theme === "dark" && <ParticlesBackground />}
 
+      {/* Vignette sides */}
+      <div style={{
+        position: "fixed",
+        top: 0, left: 0,
+        width: "100vw", height: "100vh",
+        background: "radial-gradient(ellipse at center, transparent 60%, var(--vignette-color) 100%)",
+        pointerEvents: "none",
+        zIndex: 0
+      }} />
+
+
       <CardNavbar theme={theme} toggleTheme={toggleTheme} />
+
       <div style={{
         paddingTop: "80px",
         minHeight: "100vh",
@@ -52,8 +65,10 @@ function App() {
         transition: "background-color 0.3s, color 0.3s",
         position: "relative",
         zIndex: 1,
+        display: "flex",
+        flexDirection: "column",
       }}>
-        <div className="container py-4">
+        <div className="container py-4" style={{ flex: 1 }}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
@@ -65,6 +80,7 @@ function App() {
             <Route path="/music" element={<ProtectedRoute><MusicPage /></ProtectedRoute>} />
           </Routes>
         </div>
+        <Footer />
       </div>
     </Router>
   );

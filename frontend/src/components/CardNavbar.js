@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { gsap } from "gsap";
 import { Link, useNavigate } from "react-router-dom";
 import { GoArrowUpRight } from "react-icons/go";
@@ -7,12 +7,19 @@ import "./CardNavbar.css";
 
 const CardNavbar = ({ theme, toggleTheme }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const sidebarRef = useRef(null);
   const overlayRef = useRef(null);
   const tlRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useLayoutEffect(() => {
     const sidebar = sidebarRef.current;
@@ -58,6 +65,23 @@ const CardNavbar = ({ theme, toggleTheme }) => {
       <div className="hamburger-button" onClick={toggleMenu}>
         <div className={`line ${isOpen ? "rotate1" : ""}`} />
         <div className={`line ${isOpen ? "rotate2" : ""}`} />
+      </div>
+
+      {/* Site title */}
+      <div style={{
+        position: "fixed",
+        top: "18px",
+        left: "70px",
+        zIndex: 1100,
+        fontWeight: "800",
+        fontSize: "20px",
+        color: "var(--text-color)",
+        letterSpacing: "0.5px",
+        pointerEvents: "none",
+        opacity: isOpen || scrolled ? 0 : 1,
+        transition: "opacity 0.3s ease",
+      }}>
+        🌐 Web Diary
       </div>
 
       <div ref={overlayRef} className="overlay" onClick={toggleMenu} />
