@@ -3,10 +3,7 @@ import axios from "axios";
 const BASE_URL = "http://127.0.0.1:8000";
 
 const getToken = () => localStorage.getItem("token");
-
-const authHeaders = () => ({
-  Authorization: `Bearer ${getToken()}`,
-});
+const authHeaders = () => ({ Authorization: `Bearer ${getToken()}` });
 
 // Auth
 export const register = async (username, password) => {
@@ -20,14 +17,12 @@ export const login = async (username, password) => {
 };
 
 // Items
-export const getItems = async (type = null, limit = null) => {
+export const getItems = async (type = null, limit = null, status = null) => {
   const params = {};
-  if (type) params.type = type;
-  if (limit) params.limit = limit;
-  const response = await axios.get(`${BASE_URL}/items/`, {
-    params,
-    headers: authHeaders()
-  });
+  if (type)   params.type   = type;
+  if (limit)  params.limit  = limit;
+  if (status) params.status = status;
+  const response = await axios.get(`${BASE_URL}/items/`, { params, headers: authHeaders() });
   return response.data;
 };
 
@@ -42,6 +37,11 @@ export const deleteItem = async (id) => {
 
 export const updateItem = async (id, item) => {
   const response = await axios.put(`${BASE_URL}/items/${id}`, item, { headers: authHeaders() });
+  return response.data;
+};
+
+export const markItemComplete = async (id) => {
+  const response = await axios.patch(`${BASE_URL}/items/${id}/complete`, {}, { headers: authHeaders() });
   return response.data;
 };
 
@@ -89,16 +89,14 @@ export const getMe = async (token) => {
 
 export const searchBooks = async (query) => {
   const response = await axios.get(`${BASE_URL}/catalog/books`, {
-    params: { q: query },
-    headers: authHeaders()
+    params: { q: query }, headers: authHeaders()
   });
   return response.data;
 };
 
 export const searchGames = async (query) => {
   const response = await axios.get(`${BASE_URL}/catalog/games`, {
-    params: { q: query },
-    headers: authHeaders()
+    params: { q: query }, headers: authHeaders()
   });
   return response.data;
 };
@@ -106,36 +104,25 @@ export const searchGames = async (query) => {
 export const getSongs = async (listType, year = null) => {
   const params = { list_type: listType };
   if (year) params.year = year;
-  const response = await axios.get(`${BASE_URL}/music/`, {
-    params,
-    headers: authHeaders()
-  });
+  const response = await axios.get(`${BASE_URL}/music/`, { params, headers: authHeaders() });
   return response.data;
 };
 
 export const createSong = async (song) => {
-  const response = await axios.post(`${BASE_URL}/music/`, song, {
-    headers: authHeaders()
-  });
+  const response = await axios.post(`${BASE_URL}/music/`, song, { headers: authHeaders() });
   return response.data;
 };
 
 export const deleteSong = async (id) => {
-  await axios.delete(`${BASE_URL}/music/${id}`, {
-    headers: authHeaders()
-  });
+  await axios.delete(`${BASE_URL}/music/${id}`, { headers: authHeaders() });
 };
 
 export const getProfile = async () => {
-  const response = await axios.get(`${BASE_URL}/profile/`, {
-    headers: authHeaders()
-  });
+  const response = await axios.get(`${BASE_URL}/profile/`, { headers: authHeaders() });
   return response.data;
 };
 
 export const saveProfile = async (profile) => {
-  const response = await axios.post(`${BASE_URL}/profile/`, profile, {
-    headers: authHeaders()
-  });
+  const response = await axios.post(`${BASE_URL}/profile/`, profile, { headers: authHeaders() });
   return response.data;
 };

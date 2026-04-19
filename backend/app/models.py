@@ -28,6 +28,8 @@ class Item(Base):
     rating = Column(Integer, nullable=True)
     notes = Column(String, nullable=True)
     cover_url = Column(String, nullable=True)
+    # "completed" or "wishlist"
+    status = Column(String, nullable=False, default="completed", server_default="completed")
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     owner = relationship("User", back_populates="items")

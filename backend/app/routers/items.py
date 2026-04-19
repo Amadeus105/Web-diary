@@ -11,18 +11,28 @@ router = APIRouter()
 def read_items(
     type: Optional[str] = None,
     limit: Optional[int] = None,
+    status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    return crud.get_items(db, user_id=current_user.id, type=type, limit=limit)
+    return crud.get_items(db, user_id=current_user.id, type=type, limit=limit, status=status)
+
 
 @router.post("/items/", response_model=schemas.Item)
-def add_item(item: schemas.ItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+def add_item(
+    item: schemas.ItemCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
     return crud.create_item(db, item, user_id=current_user.id)
 
 
 @router.delete("/items/{item_id}")
-def delete_item(item_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+def delete_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
     item = crud.delete_item(db, item_id, user_id=current_user.id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -30,8 +40,30 @@ def delete_item(item_id: int, db: Session = Depends(get_db), current_user: model
 
 
 @router.put("/items/{item_id}", response_model=schemas.Item)
-def update_item(item_id: int, item: schemas.ItemCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+def update_item(
+    item_id: int,
+    item: schemas.ItemUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
     updated_item = crud.update_item(db, item_id, item, user_id=current_user.id)
     if not updated_item:
         raise HTTPException(status_code=404, detail="Item not found")
     return updated_item
+
+
+@router.patch("/items/{item_id}/complete", response_model=schemas.Item)
+def mark_complete(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """Move a wishlist item to completed."""
+    item = crud.update_item(
+        db, item_id,
+        schemas.ItemUpdate(status="completed"),
+        user_id=current_user.id
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item

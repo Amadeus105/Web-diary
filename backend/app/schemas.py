@@ -10,9 +10,20 @@ class ItemBase(BaseModel):
     rating: Optional[int] = None
     notes: Optional[str] = None
     cover_url: Optional[str] = None
+    status: Optional[str] = "completed"   # "completed" | "wishlist"
 
 class ItemCreate(ItemBase):
     pass
+
+class ItemUpdate(BaseModel):
+    """Partial update — all fields optional so we can patch just status."""
+    name: Optional[str] = None
+    type: Optional[str] = None
+    finished_date: Optional[date] = None
+    rating: Optional[int] = None
+    notes: Optional[str] = None
+    cover_url: Optional[str] = None
+    status: Optional[str] = None
 
 class Item(ItemBase):
     id: int
