@@ -56,8 +56,21 @@ export const createSuggestion = async (suggestion) => {
   return response.data;
 };
 
-export const getAISuggestions = async () => {
-  const response = await axios.post(`${BASE_URL}/suggestions/ai`, {}, { headers: authHeaders() });
+export const getAISuggestions = async (filterType) => {
+  const response = await axios.post(
+    `${BASE_URL}/suggestions/ai?filter_type=${filterType}`,
+    {},
+    { headers: authHeaders() }
+  );
+  return response.data;
+};
+
+export const getPlot = async (title, mediaType, language) => {
+  const response = await axios.post(
+    `${BASE_URL}/suggestions/plot`,
+    { title, media_type: mediaType, language },
+    { headers: authHeaders() }
+  );
   return response.data;
 };
 

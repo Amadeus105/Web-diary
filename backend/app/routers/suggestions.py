@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from .. import crud, models
 from ..auth_utils import get_db, get_current_user
+from pydantic import BaseModel
 import httpx
 import os
 
@@ -10,6 +11,29 @@ router = APIRouter()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
+
+# ── Shared helper ────────────────────────────────────────────
+async def call_openrouter(prompt: str, max_tokens: int = 500) -> str:
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "google/gemma-3-4b-it:free",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens
+            }
+        )
+    data = response.json()
+    if "choices" not in data:
+        raise HTTPException(status_code=500, detail=f"OpenRouter error: {data}")
+    return data["choices"][0]["message"]["content"]
+
+
+# ── AI Recommendations ───────────────────────────────────────
 @router.post("/suggestions/ai")
 async def get_ai_suggestions(
     filter_type: Optional[str] = None,
@@ -21,7 +45,6 @@ async def get_ai_suggestions(
     if not items:
         return {"intro": "Add some completed items first!", "suggestions": []}
 
-    # Filter by type if specified
     if filter_type and filter_type != "both":
         items = [i for i in items if i.type.lower() == filter_type.lower()]
 
@@ -47,27 +70,7 @@ Title | type | one sentence why they would like it
 
 Where type is exactly "book" or "game"."""
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "google/gemma-3-4b-it:free",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 500
-            }
-        )
-
-    data = response.json()
-    print("OpenRouter response:", data)  # add this
-
-    if "choices" not in data:
-        raise HTTPException(status_code=500, detail=f"OpenRouter error: {data}")
-
-    result = data["choices"][0]["message"]["content"]
+    result = await call_openrouter(prompt, max_tokens=500)
     lines = result.strip().split("\n")
     intro = ""
     suggestions = []
@@ -84,3 +87,42 @@ Where type is exactly "book" or "game"."""
             intro = line.strip()
 
     return {"intro": intro, "suggestions": suggestions}
+
+
+# ── Plot Lookup ──────────────────────────────────────────────
+class PlotRequest(BaseModel):
+    title: str
+    media_type: str   # "book" | "game" | "movie"
+    language: str     # "english" | "russian" | "kazakh"
+
+
+PROMPTS = {
+    "english": {
+        "book":  lambda t: f'Write a short spoiler-free plot summary (3-5 sentences) for the book "{t}". No ending, no major twists. Describe the setting, main character and what the story is about at the start. Reply in English only. No preamble.',
+        "game":  lambda t: f'Write a short spoiler-free plot summary (3-5 sentences) for the video game "{t}". No ending, no major twists. Describe the setting, main character and what the story is about at the start. Reply in English only. No preamble.',
+        "movie": lambda t: f'Write a short spoiler-free plot summary (3-5 sentences) for the movie "{t}". No ending, no major twists. Describe the setting, main character and what the story is about at the start. Reply in English only. No preamble.',
+    },
+    "russian": {
+        "book":  lambda t: f'Напиши короткий пересказ книги "{t}" без спойлеров (3-5 предложений). Не раскрывай концовку и ключевые повороты сюжета. Опиши сеттинг, главного героя и завязку сюжета. Отвечай ТОЛЬКО на русском языке. Без вводных слов.',
+        "game":  lambda t: f'Напиши короткий пересказ видеоигры "{t}" без спойлеров (3-5 предложений). Не раскрывай концовку и ключевые повороты сюжета. Опиши сеттинг, главного героя и завязку сюжета. Отвечай ТОЛЬКО на русском языке. Без вводных слов.',
+        "movie": lambda t: f'Напиши короткий пересказ фильма "{t}" без спойлеров (3-5 предложений). Не раскрывай концовку и ключевые повороты сюжета. Опиши сеттинг, главного героя и завязку сюжета. Отвечай ТОЛЬКО на русском языке. Без вводных слов.',
+    },
+    "kazakh": {
+        "book":  lambda t: f'"{t}" кітабының спойлерсіз қысқаша мазмұнын жаз (3-5 сөйлем). Соңын және негізгі бұрылыстарды ашпа. Кейіпкерді, оқиға орнын және сюжеттің басын сипатта. ТЕК қазақ тілінде жауап бер. Кіріспесіз.',
+        "game":  lambda t: f'"{t}" видеойынының спойлерсіз қысқаша мазмұнын жаз (3-5 сөйлем). Соңын және негізгі бұрылыстарды ашпа. Кейіпкерді, оқиға орнын және сюжеттің басын сипатта. ТЕК қазақ тілінде жауап бер. Кіріспесіз.',
+        "movie": lambda t: f'"{t}" фильмінің спойлерсіз қысқаша мазмұнын жаз (3-5 сөйлем). Соңын және негізгі бұрылыстарды ашпа. Кейіпкерді, оқиға орнын және сюжеттің басын сипатта. ТЕК қазақ тілінде жауап бер. Кіріспесіз.',
+    },
+}
+
+
+@router.post("/suggestions/plot")
+async def get_plot(
+    body: PlotRequest,
+    current_user: models.User = Depends(get_current_user)
+):
+    lang    = body.language   if body.language   in PROMPTS            else "english"
+    media   = body.media_type if body.media_type in PROMPTS["english"] else "book"
+    prompt  = PROMPTS[lang][media](body.title)
+
+    summary = await call_openrouter(prompt, max_tokens=300)
+    return {"title": body.title, "summary": summary.strip()}
