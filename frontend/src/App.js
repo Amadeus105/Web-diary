@@ -13,6 +13,9 @@ import LoginPage from "./pages/LoginPage";
 import AdminPage from "./pages/AdminPage";
 import CatalogPage from "./pages/CatalogPage";
 import MusicPage from "./pages/MusicPage";
+import FriendsPage     from "./pages/FriendsPage";
+import ChatPage        from "./pages/ChatPage";
+import UserProfilePage from "./pages/UserProfilePage";
 
 const ProtectedRoute = ({ children }) => {
   const { token } = useAuth();
@@ -78,6 +81,10 @@ function App() {
             <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
             <Route path="/catalog" element={<ProtectedRoute><CatalogPage /></ProtectedRoute>} />
             <Route path="/music" element={<ProtectedRoute><MusicPage /></ProtectedRoute>} />
+            <Route path="/friends"    element={<FriendsPage />} />
+            <Route path="/chat"       element={<ChatPage />} />
+            <Route path="/chat/:partnerId" element={<ChatPage />} />
+            <Route path="/u/:username"    element={<UserProfilePage />} />
           </Routes>
         </div>
         <Footer />

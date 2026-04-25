@@ -62,3 +62,11 @@ def get_admin_user(current_user: models.User = Depends(get_current_user)):
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admins only")
     return current_user
+
+def verify_token(token: str, db: Session):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        return db.query(models.User).filter(models.User.username == username).first()
+    except:
+        return None

@@ -1,4 +1,4 @@
-/* Hamburger button */
+/* ── Hamburger ── */
 .hamburger-button {
   position: fixed;
   top: 20px;
@@ -17,61 +17,102 @@
   transition: 0.3s;
 }
 
-.rotate1 {
-  transform: rotate(45deg) translateY(5px);
-}
+.rotate1 { transform: rotate(45deg) translateY(5px); }
+.rotate2 { transform: rotate(-45deg) translateY(-5px); }
 
-.rotate2 {
-  transform: rotate(-45deg) translateY(-5px);
-}
-
-/* Overlay */
+/* ── Overlay ── */
 .overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
-  z-index: 1000;
+  z-index: 98;
 }
 
-/* Sidebar */
+/* ── Sidebar ── */
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  width: 260px;
+  width: 240px;
   height: 100vh;
-  padding: 40px 20px;
-  z-index: 1050;
+  padding: 32px 20px 24px;
+  z-index: 99;
   display: flex;
   flex-direction: column;
+  background-color: var(--sidebar-bg, #fff);
+  color: var(--text-color, #000);
+  transition: background-color 0.3s, color 0.3s;
 }
+
+.hamburger-button { z-index: 100; }
 
 .logo {
-  margin-bottom: 40px;
+  margin-bottom: 32px;
+  font-size: 18px;
 }
 
+/* ── Nav links ── */
 .nav-links {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 4px;
 }
 
 .nav-link {
-  color: white;
+  color: var(--text-color, #000);
   text-decoration: none;
-  font-size: 18px;
+  font-size: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: 0.3s;
+  padding: 8px 10px;
+  border-radius: 8px;
+  transition: background 0.2s, opacity 0.2s;
 }
 
 .nav-link:hover {
-  opacity: 0.7;
+  background: rgba(124, 58, 237, 0.1);
 }
 
+.nav-link-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  font-size: 16px;
+  font-family: inherit;
+  text-align: left;
+}
+
+.nav-submenu-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 12px;
+}
+
+.nav-sublink {
+  font-size: 14px;
+  padding: 6px 10px;
+  opacity: 0.85;
+  border-left: 2px solid rgba(124, 58, 237, 0.3);
+  border-radius: 0 6px 6px 0;
+}
+
+.nav-sublink:hover {
+  background: rgba(124, 58, 237, 0.1);
+  border-left-color: #7c3aed;
+  opacity: 1;
+}
+
+/* ── Bottom buttons ── */
 .theme-button {
-  margin-top: 2rem;
+  margin-top: 0.75rem;
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 6px;
@@ -80,33 +121,181 @@
   cursor: pointer;
   font-weight: 500;
   display: block;
-  width: 90%;
+  width: 100%;
   text-align: center;
-  transition: background 0.3s, color 0.3s;
+  transition: opacity 0.2s;
 }
 
-.theme-button:hover {
-  opacity: 0.8;
+.theme-button:hover { opacity: 0.8; }
+.mt-2 { margin-top: 0.5rem; }
+
+/* ════════════════════════════════
+   RIGHT-SIDE USER WIDGET
+════════════════════════════════ */
+.navbar-user-widget {
+  position: fixed;
+  top: 12px;
+  right: 20px;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.sidebar {
-  background-color: var(--sidebar-bg, #fff);
+/* Avatar button */
+.navbar-avatar-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--block-bg, rgba(255,255,255,0.08));
+  border: 1px solid var(--block-border, rgba(255,255,255,0.15));
+  border-radius: 999px;
+  padding: 4px 12px 4px 4px;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  backdrop-filter: blur(8px);
+}
+
+.navbar-avatar-btn:hover {
+  background: rgba(124, 58, 237, 0.15);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3);
+}
+
+.navbar-avatar-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.navbar-avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #10b981);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.navbar-username {
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-color, #000);
-  transition: background-color 0.3s, color 0.3s;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.nav-link {
+/* Dropdown */
+.navbar-user-drop {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 200px;
+  background: var(--sidebar-bg, #fff);
+  border: 1px solid var(--block-border, rgba(0,0,0,0.1));
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+  padding: 8px 0;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.97);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.navbar-user-drop.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Dropdown header */
+.drop-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 8px;
+}
+
+.drop-avatar-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.drop-avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #10b981);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.drop-username {
+  font-size: 14px;
+  font-weight: 700;
   color: var(--text-color, #000);
 }
 
-.hamburger-button {
-  z-index: 100;
+.drop-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.12);
+  border-radius: 4px;
+  padding: 1px 6px;
+  display: inline-block;
+  margin-top: 2px;
 }
 
-.sidebar {
-  z-index: 99;
+/* Dropdown items */
+.drop-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  font-size: 14px;
+  color: var(--text-color, #000);
+  text-decoration: none;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
 }
 
-.overlay {
-  z-index: 98;
+.drop-item:hover {
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.drop-divider {
+  height: 1px;
+  background: var(--block-border, rgba(0,0,0,0.08));
+  margin: 4px 0;
+}
+
+.drop-logout {
+  color: #ef4444;
+}
+
+.drop-logout:hover {
+  background: rgba(239, 68, 68, 0.08);
 }

@@ -7,6 +7,21 @@ from typing import Optional
 router = APIRouter()
 
 
+def _write_activity(db: Session, user_id: int, item: models.Item):
+    """Record item creation in activity feed."""
+    action = "wishlist" if item.status == "wishlist" else "completed"
+    entry = models.ActivityFeed(
+        user_id=user_id,
+        action_type=action,
+        item_name=item.name,
+        item_type=item.type,
+        item_cover=item.cover_url,
+        rating=item.rating,
+    )
+    db.add(entry)
+    db.commit()
+
+
 @router.get("/items/", response_model=list[schemas.Item])
 def read_items(
     type: Optional[str] = None,
@@ -24,7 +39,9 @@ def add_item(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    return crud.create_item(db, item, user_id=current_user.id)
+    created = crud.create_item(db, item, user_id=current_user.id)
+    _write_activity(db, current_user.id, created)
+    return created
 
 
 @router.delete("/items/{item_id}")
@@ -46,10 +63,10 @@ def update_item(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    updated_item = crud.update_item(db, item_id, item, user_id=current_user.id)
-    if not updated_item:
+    updated = crud.update_item(db, item_id, item, user_id=current_user.id)
+    if not updated:
         raise HTTPException(status_code=404, detail="Item not found")
-    return updated_item
+    return updated
 
 
 @router.patch("/items/{item_id}/complete", response_model=schemas.Item)
@@ -58,7 +75,6 @@ def mark_complete(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    """Move a wishlist item to completed."""
     item = crud.update_item(
         db, item_id,
         schemas.ItemUpdate(status="completed"),
@@ -66,4 +82,15 @@ def mark_complete(
     )
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
+    # Write "completed" activity
+    entry = models.ActivityFeed(
+        user_id=current_user.id,
+        action_type="completed",
+        item_name=item.name,
+        item_type=item.type,
+        item_cover=item.cover_url,
+        rating=item.rating,
+    )
+    db.add(entry)
+    db.commit()
     return item
