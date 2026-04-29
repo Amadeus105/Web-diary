@@ -3,7 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
-const WS_URL   = "ws://localhost:8000";
+const WS_URL = (process.env.REACT_APP_API_URL || "http://localhost:8000")
+  .replace("https://", "wss://")
+  .replace("http://", "ws://");
 const getToken = () => localStorage.getItem("token");
 const H = () => ({ Authorization: `Bearer ${getToken()}` });
 
