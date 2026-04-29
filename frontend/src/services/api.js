@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const BASE_URL = "http://127.0.0.1:8000";
+// Локально = http://127.0.0.1:8000
+// На проде = твой Render URL (задаётся в .env или Vercel env vars)
+const BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
 
 const getToken = () => localStorage.getItem("token");
 const authHeaders = () => ({ Authorization: `Bearer ${getToken()}` });
