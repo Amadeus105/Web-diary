@@ -210,10 +210,13 @@ const Home = () => {
           display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
           gap: "12px", marginBottom: "24px",
         }}>
-          <StatPill emoji="✅" value={stats?.total ?? "—"}     label="Total completed" color="#7c3aed" />
-          <StatPill emoji="📚" value={stats?.by_type?.find(t => t.type === "book")?.count ?? 0} label="Books finished"  color="#10b981" />
-          <StatPill emoji="🎮" value={stats?.by_type?.find(t => t.type === "game")?.count ?? 0} label="Games completed" color="#7c3aed" />
-          <StatPill emoji="⭐" value={stats?.avg_rating ?? "—"} label="Avg rating"      color="#f59e0b" />
+        <StatPill emoji="✅" value={stats?.total ?? (games.length + books.length)}  label="Total completed" color="#7c3aed" />
+        <StatPill emoji="📚" value={stats?.by_type?.find(t => t.type === "book")?.count ?? books.length} label="Books finished"  color="#10b981" />
+        <StatPill emoji="🎮" value={stats?.by_type?.find(t => t.type === "game")?.count ?? games.length} label="Games completed" color="#7c3aed" />
+        <StatPill emoji="⭐" value={stats?.avg_rating ?? (() => {
+          const rated = [...games, ...books].filter(i => i.rating);
+          return rated.length ? (rated.reduce((s, i) => s + i.rating, 0) / rated.length).toFixed(1) : "—";
+        })()} label="Avg rating" color="#f59e0b" />
         </div>
 
         {/* Games | Music | Books */}
