@@ -32,7 +32,7 @@ def get_stats(
             all_ratings.append(item.rating)
 
         if item.finished_date:
-            key = item.finished_date.strftime("%Y-%m")
+            key = str(item.finished_date)[:7]
             by_month[key] = by_month.get(key, 0) + 1
 
     avg_rating = round(sum(all_ratings) / len(all_ratings), 2) if all_ratings else None

@@ -23,7 +23,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db), _=Depends(get_admin
 
 @router.get("/items", response_model=list[schemas.Item])
 def get_all_items(db: Session = Depends(get_db), _=Depends(get_admin_user)):
-    return db.query(models.Item).all()
+    return db.query(models.Item).filter(models.Item.user_id.isnot(None)).all()
 
 
 @router.delete("/items/{item_id}")
