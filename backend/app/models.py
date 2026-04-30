@@ -125,3 +125,14 @@ class ActivityFeed(Base):
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
 
     owner = relationship("User", back_populates="activity")
+
+    
+class PlotCache(Base):
+    __tablename__ = "plot_cache"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    title      = Column(String, nullable=False)
+    media_type = Column(String, nullable=False)
+    language   = Column(String, nullable=False)
+    summary    = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

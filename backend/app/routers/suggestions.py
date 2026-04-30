@@ -118,11 +118,29 @@ PROMPTS = {
 @router.post("/suggestions/plot")
 async def get_plot(
     body: PlotRequest,
+    db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    lang    = body.language   if body.language   in PROMPTS            else "english"
-    media   = body.media_type if body.media_type in PROMPTS["english"] else "book"
-    prompt  = PROMPTS[lang][media](body.title)
+    lang  = body.language   if body.language   in PROMPTS            else "english"
+    media = body.media_type if body.media_type in PROMPTS["english"] else "book"
 
+    # Проверяем кэш
+    cached = db.query(models.PlotCache).filter(
+        models.PlotCache.title      == body.title,
+        models.PlotCache.media_type == media,
+        models.PlotCache.language   == lang,
+    ).first()
+
+    if cached:
+        return {"title": body.title, "summary": cached.summary}
+
+    # Нет в кэше — идём в OpenRouter
+    prompt  = PROMPTS[lang][media](body.title)
     summary = await call_openrouter(prompt, max_tokens=300)
-    return {"title": body.title, "summary": summary.strip()}
+    summary = summary.strip()
+
+    # Сохраняем в кэш
+    db.add(models.PlotCache(title=body.title, media_type=media, language=lang, summary=summary))
+    db.commit()
+
+    return {"title": body.title, "summary": summary}

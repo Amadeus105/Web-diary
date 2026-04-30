@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
-from .routers import items, suggestions, auth, admin, catalog, music, profile, friends, chat
+from .routers import items, suggestions, auth, admin, catalog, music, profile, friends, chat, stats
 import os
 
 Base.metadata.create_all(bind=engine)
@@ -35,3 +35,4 @@ app.include_router(music.router)
 app.include_router(profile.router)
 app.include_router(friends.router)
 app.include_router(chat.router)
+app.include_router(stats.router)

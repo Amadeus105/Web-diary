@@ -3,6 +3,9 @@ from sqlalchemy.orm import Session
 from .. import crud, schemas, models
 from ..auth_utils import get_db, get_current_user
 from typing import Optional
+import csv
+import io
+from fastapi.responses import StreamingResponse
 
 router = APIRouter()
 
@@ -94,3 +97,32 @@ def mark_complete(
     db.add(entry)
     db.commit()
     return item
+
+@router.get("/items/export")
+def export_items(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    items = db.query(models.Item).filter(
+        models.Item.user_id == current_user.id
+    ).order_by(models.Item.id.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Name", "Type", "Status", "Rating", "Finished Date", "Notes"])
+    for item in items:
+        writer.writerow([
+            item.name,
+            item.type,
+            item.status,
+            item.rating or "",
+            item.finished_date or "",
+            item.notes or "",
+        ])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=my_diary.csv"}
+    )

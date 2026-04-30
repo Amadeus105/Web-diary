@@ -141,3 +141,21 @@ export const saveProfile = async (profile) => {
   const response = await axios.post(`${BASE_URL}/profile/`, profile, { headers: authHeaders() });
   return response.data;
 };
+
+export const getStats = async () => {
+  const response = await axios.get(`${BASE_URL}/stats/`, { headers: authHeaders() });
+  return response.data;
+};
+
+export const exportItems = async () => {
+  const response = await axios.get(`${BASE_URL}/items/export`, {
+    headers: authHeaders(),
+    responseType: "blob",
+  });
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "my_diary.csv";
+  a.click();
+  window.URL.revokeObjectURL(url);
+};
