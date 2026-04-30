@@ -143,8 +143,12 @@ export const saveProfile = async (profile) => {
 };
 
 export const getStats = async () => {
-  const response = await axios.get(`${BASE_URL}/stats/`, { headers: authHeaders() });
-  return response.data;
+  try {
+    const response = await axios.get(`${BASE_URL}/stats/`, { headers: authHeaders() });
+    return response.data;
+  } catch {
+    return null;
+  }
 };
 
 export const exportItems = async () => {
