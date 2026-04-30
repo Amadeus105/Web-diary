@@ -5,8 +5,7 @@ __pycache__/
 *.pyd
 *.sqlite3
 venv/
-.claude
-.claude/worktrees
+.claude/
 
 # Node / React
 node_modules/
