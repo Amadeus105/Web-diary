@@ -163,3 +163,8 @@ export const exportItems = async () => {
   a.click();
   window.URL.revokeObjectURL(url);
 };
+
+export const setSongOfDay = async (song) => {
+  const res = await axios.patch(`${BASE_URL}/profile/song-of-day`, song, { headers: authHeaders() });
+  return res.data;
+};

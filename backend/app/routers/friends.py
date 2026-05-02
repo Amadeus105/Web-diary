@@ -268,6 +268,7 @@ def public_profile(
         "avatar_url": profile.avatar_url if profile else None,
         "title": profile.title if profile else None,
         "handle": profile.handle if profile else None,
+        "song_of_day": profile.song_of_day if profile else None,
         "items": [
             {
                 "id": i.id, "name": i.name, "type": i.type,

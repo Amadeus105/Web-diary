@@ -81,6 +81,7 @@ class UserProfile(Base):
     status     = Column(String, nullable=True)
     avatar_url = Column(String, nullable=True)
     github_url = Column(String, nullable=True)
+    song_of_day = Column(Text, nullable=True)
 
     owner = relationship("User", back_populates="profile")
 

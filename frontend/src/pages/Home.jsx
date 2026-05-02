@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { getItems, getSongs, getStats } from "../services/api";
 import ChromaGrid from "../components/ChromaGrid";
 
@@ -21,11 +21,8 @@ const STYLES = `
 .home-card:nth-child(3) { animation-delay: 0.19s; }
 .home-card:nth-child(4) { animation-delay: 0.26s; }
 .home-card:nth-child(5) { animation-delay: 0.33s; }
-
 @media (max-width: 900px) {
   .home-main-grid { grid-template-columns: 1fr !important; }
-  .home-music-grid { grid-template-columns: 1fr !important; }
-  .home-bottom-grid { grid-template-columns: 1fr !important; }
 }
 @media (max-width: 600px) {
   .home-pills { grid-template-columns: 1fr 1fr !important; }
@@ -35,36 +32,6 @@ const STYLES = `
 const TYPE_COLORS = {
   game: "#7c3aed", book: "#10b981", movie: "#f59e0b", anime: "#ef4444",
 };
-
-const SongRow = ({ song }) => (
-  <div style={{
-    display: "flex", alignItems: "center", gap: "10px",
-    padding: "8px 10px", borderRadius: "10px",
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid var(--block-border)",
-    marginBottom: "6px",
-  }}>
-    {song.cover_url
-      ? <img src={song.cover_url} alt={song.title}
-          style={{ width: "36px", height: "36px", borderRadius: "6px", objectFit: "cover", flexShrink: 0 }} />
-      : <div style={{ width: "36px", height: "36px", borderRadius: "6px",
-          background: "linear-gradient(135deg,#7c3aed33,#10b98133)", flexShrink: 0 }} />
-    }
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ color: "var(--text-color)", fontWeight: "700", fontSize: "13px",
-        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{song.title}</div>
-      <div style={{ color: "var(--text-color)", opacity: 0.5, fontSize: "11px" }}>{song.artist}</div>
-    </div>
-    {song.link && (
-      <a href={song.link} target="_blank" rel="noreferrer"
-        style={{ background: "#1db954", color: "white", borderRadius: "5px",
-          padding: "4px 10px", fontSize: "12px", textDecoration: "none",
-          fontWeight: "700", flexShrink: 0, whiteSpace: "nowrap" }}>
-        ▶
-      </a>
-    )}
-  </div>
-);
 
 const Block = ({ title, children, minHeight = "280px", style = {}, accent }) => (
   <div className="home-card" style={{
@@ -81,8 +48,7 @@ const Block = ({ title, children, minHeight = "280px", style = {}, accent }) => 
     {accent && <div style={{ position: "absolute", top: 0, left: "24px", right: "24px",
       height: "2px", borderRadius: "0 0 4px 4px",
       background: `linear-gradient(90deg, ${accent}, transparent)`, opacity: 0.6 }} />}
-    <h5 style={{ color: "var(--text-color)", marginBottom: "16px", fontWeight: "800",
-      fontSize: "14px", letterSpacing: "0.2px" }}>
+    <h5 style={{ color: "var(--text-color)", marginBottom: "16px", fontWeight: "800", fontSize: "14px" }}>
       {title}
     </h5>
     {children}
@@ -126,40 +92,295 @@ const Loader = () => (
   </div>
 );
 
-const Home = () => {
-  const [games, setGames]       = useState([]);
-  const [books, setBooks]       = useState([]);
-  const [topSongs, setTopSongs] = useState([]);
-  const [yearSongs, setYearSongs] = useState([]);
-  const [stats, setStats]       = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [theme, setTheme]       = useState(document.documentElement.getAttribute("data-theme") || "light");
-  const currentYear = new Date().getFullYear();
+/* ── Song of the Day + Today's Listen ── */
+const SongOfDayWidget = ({ top100 }) => {
+  const today = new Date().toDateString();
+
+  const [todayListen, setTodayListen] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("todayListen") || "null");
+      return saved?.date === today ? saved.song : null;
+    } catch { return null; }
+  });
+
+  const [search, setSearch]       = useState("");
+  const [results, setResults]     = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+
+  const audioRef  = useRef(null);
+  const [playing, setPlaying]   = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  // Вместо: const songOfDay = top100[new Date().getDate() % top100.length]
+    const saved = JSON.parse(localStorage.getItem("songOfDay") || "null");
+    const songOfDay = saved || top100[0]; // fallback если ещё не выбрано
 
   useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setTheme(document.documentElement.getAttribute("data-theme") || "light");
-    });
+    if (!search.trim()) { setResults([]); return; }
+    const t = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res  = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(search)}&media=music&entity=song&limit=5`);
+        const data = await res.json();
+        setResults(data.results || []);
+      } catch { setResults([]); }
+      setSearching(false);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const saveTodayListen = (track) => {
+    const song = {
+      title:      track.trackName,
+      artist:     track.artistName,
+      cover_url:  track.artworkUrl100?.replace("100x100bb", "300x300bb"),
+      previewUrl: track.previewUrl,
+      link:       track.trackViewUrl,
+    };
+    localStorage.setItem("todayListen", JSON.stringify({ date: today, song }));
+    setTodayListen(song);
+    setSearch(""); setResults([]); setShowSearch(false);
+  };
+
+  const clearToday = () => {
+    localStorage.removeItem("todayListen");
+    setTodayListen(null);
+    if (audioRef.current) { audioRef.current.pause(); setPlaying(false); }
+  };
+
+  const togglePlay = (url) => {
+    if (!url) return;
+    if (playing) {
+      audioRef.current.pause();
+      setPlaying(false);
+    } else {
+      audioRef.current.src = url;
+      audioRef.current.play();
+      setPlaying(true);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <audio ref={audioRef}
+        onEnded={() => { setPlaying(false); setProgress(0); }}
+        onTimeUpdate={() => {
+          if (audioRef.current)
+            setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100 || 0);
+        }}
+      />
+
+      {/* Song of the Day */}
+      <div className="home-card" style={{
+        background: "var(--block-bg)", backdropFilter: "blur(14px)",
+        borderRadius: "20px", border: "1px solid var(--block-border)",
+        padding: "18px", position: "relative", overflow: "hidden",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.07)",
+      }}>
+        <div style={{ position: "absolute", top: 0, left: "20px", right: "20px", height: "2px",
+          background: "linear-gradient(90deg,#f59e0b,transparent)", borderRadius: "0 0 4px 4px" }} />
+        <p style={{ color: "var(--text-color)", opacity: 0.5, fontSize: "11px",
+          fontWeight: "700", letterSpacing: "0.6px", margin: "0 0 14px" }}>🎵 SONG OF THE DAY</p>
+
+        {!songOfDay ? (
+          <p style={{ color: "var(--text-color)", opacity: 0.3, fontSize: "13px", margin: 0 }}>
+            Add songs to Top 100 first
+          </p>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {songOfDay.cover_url
+              ? <img src={songOfDay.cover_url} alt={songOfDay.title}
+                  style={{ width: "52px", height: "52px", borderRadius: "10px", objectFit: "cover", flexShrink: 0 }} />
+              : <div style={{ width: "52px", height: "52px", borderRadius: "10px", flexShrink: 0,
+                  background: "linear-gradient(135deg,#f59e0b33,#7c3aed33)",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>🎵</div>
+            }
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: "var(--text-color)", fontWeight: "800", fontSize: "14px",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{songOfDay.title}</div>
+              <div style={{ color: "var(--text-color)", opacity: 0.5, fontSize: "12px" }}>{songOfDay.artist}</div>
+            </div>
+            {songOfDay.link && (
+              <a href={songOfDay.link} target="_blank" rel="noreferrer"
+                style={{ background: "#1db954", color: "white", borderRadius: "8px",
+                  padding: "5px 12px", fontSize: "12px", textDecoration: "none",
+                  fontWeight: "700", flexShrink: 0 }}>▶</a>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Today's Listen */}
+      <div className="home-card" style={{
+        background: "var(--block-bg)", backdropFilter: "blur(14px)",
+        borderRadius: "20px", border: "1px solid var(--block-border)",
+        padding: "16px", boxShadow: "0 4px 24px rgba(0,0,0,0.07)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+          <p style={{ color: "var(--text-color)", opacity: 0.5, fontSize: "11px",
+            fontWeight: "700", letterSpacing: "0.6px", margin: 0 }}>🎧 TODAY'S LISTEN</p>
+          {!todayListen && (
+            <button onClick={() => setShowSearch(!showSearch)} style={{
+              background: showSearch ? "rgba(124,58,237,0.25)" : "rgba(124,58,237,0.12)",
+              border: "none", cursor: "pointer", color: "#7c3aed",
+              fontSize: "11px", fontWeight: "700", borderRadius: "6px", padding: "4px 10px",
+            }}>+ Add</button>
+          )}
+          {todayListen && (
+            <button onClick={clearToday} style={{ background: "none", border: "none",
+              cursor: "pointer", color: "var(--text-color)", opacity: 0.3, fontSize: "16px" }}>✕</button>
+          )}
+        </div>
+
+        {todayListen ? (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              {todayListen.cover_url
+                ? <img src={todayListen.cover_url} alt={todayListen.title}
+                    style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
+                : <div style={{ width: "44px", height: "44px", borderRadius: "8px", flexShrink: 0,
+                    background: "linear-gradient(135deg,#7c3aed33,#10b98133)",
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>🎵</div>
+              }
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ color: "var(--text-color)", fontWeight: "700", fontSize: "13px",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{todayListen.title}</div>
+                <div style={{ color: "var(--text-color)", opacity: 0.5, fontSize: "11px" }}>{todayListen.artist}</div>
+              </div>
+              {todayListen.previewUrl && (
+                <button onClick={() => togglePlay(todayListen.previewUrl)} style={{
+                  width: "32px", height: "32px", borderRadius: "50%", border: "none", cursor: "pointer",
+                  background: playing ? "#7c3aed" : "rgba(124,58,237,0.15)",
+                  color: playing ? "white" : "#7c3aed", fontSize: "13px", flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s",
+                }}>{playing ? "⏸" : "▶"}</button>
+              )}
+            </div>
+            {playing && (
+              <div style={{ marginTop: "8px", background: "var(--block-border)", borderRadius: "3px", height: "2px" }}>
+                <div style={{ width: `${progress}%`, height: "100%", borderRadius: "3px",
+                  background: "linear-gradient(90deg,#7c3aed,#10b981)", transition: "width 0.5s linear" }} />
+              </div>
+            )}
+            <p style={{ color: "var(--text-color)", opacity: 0.25, fontSize: "10px", margin: "8px 0 0" }}>
+              disappears tomorrow ✦
+            </p>
+          </>
+        ) : (
+          <>
+            {showSearch ? (
+              <div style={{ position: "relative" }}>
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search on iTunes..."
+                  autoFocus
+                  style={{ width: "100%", background: "rgba(255,255,255,0.05)",
+                    border: "1px solid var(--block-border)", borderRadius: "10px",
+                    padding: "8px 12px", color: "var(--text-color)", outline: "none",
+                    fontSize: "13px", boxSizing: "border-box" }}
+                />
+                {searching && (
+                  <div style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)",
+                    width: "14px", height: "14px", borderRadius: "50%",
+                    border: "2px solid var(--block-border)", borderTopColor: "#7c3aed",
+                    animation: "spin 0.8s linear infinite" }} />
+                )}
+                {results.length > 0 && (
+                  <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, zIndex: 300,
+                    background: "var(--block-bg)", backdropFilter: "blur(20px)",
+                    borderRadius: "12px", border: "1px solid var(--block-border)",
+                    boxShadow: "0 12px 40px rgba(0,0,0,0.25)", overflow: "hidden" }}>
+                    {results.map(t => (
+                      <div key={t.trackId} onClick={() => saveTodayListen(t)} style={{
+                        display: "flex", alignItems: "center", gap: "10px",
+                        padding: "10px 14px", cursor: "pointer",
+                        borderBottom: "1px solid var(--block-border)", transition: "background 0.15s",
+                      }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.08)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        <img src={t.artworkUrl100} alt={t.trackName}
+                          style={{ width: "36px", height: "36px", borderRadius: "6px", objectFit: "cover", flexShrink: 0 }} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ color: "var(--text-color)", fontWeight: "700", fontSize: "12px",
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.trackName}</div>
+                          <div style={{ color: "var(--text-color)", opacity: 0.5, fontSize: "11px" }}>{t.artistName}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p style={{ color: "var(--text-color)", opacity: 0.3, fontSize: "13px", margin: 0 }}>
+                What are you listening to today?
+              </p>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Quick Links */}
+      <div className="home-card" style={{
+        background: "linear-gradient(135deg, rgba(124,58,237,0.15), rgba(16,185,129,0.08))",
+        borderRadius: "16px", border: "1px solid var(--block-border)",
+        padding: "16px", display: "flex", flexDirection: "column", gap: "8px",
+      }}>
+        <p style={{ color: "var(--text-color)", opacity: 0.5, fontSize: "11px",
+          fontWeight: "700", letterSpacing: "0.6px", margin: 0 }}>QUICK LINKS</p>
+        {[
+          { label: "📋 My Completed List", href: "/completed" },
+          { label: "🔍 Browse Catalog",    href: "/catalog" },
+          { label: "🤖 AI Suggestions",    href: "/suggestions" },
+        ].map(({ label, href }) => (
+          <a key={href} href={href} style={{
+            display: "block", padding: "8px 12px", borderRadius: "10px",
+            background: "rgba(255,255,255,0.04)", border: "1px solid var(--block-border)",
+            color: "var(--text-color)", textDecoration: "none", fontSize: "13px",
+            fontWeight: "600", transition: "background 0.2s",
+          }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.12)"}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+          >{label}</a>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ── Main ── */
+const Home = () => {
+  const [games, setGames]   = useState([]);
+  const [books, setBooks]   = useState([]);
+  const [top100, setTop100] = useState([]);
+  const [stats, setStats]   = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [theme, setTheme]   = useState(document.documentElement.getAttribute("data-theme") || "light");
+
+  useEffect(() => {
+    const observer = new MutationObserver(() =>
+      setTheme(document.documentElement.getAttribute("data-theme") || "light")
+    );
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     return () => observer.disconnect();
   }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [g, b, ys, allTop100, statsData] = await Promise.all([
+    const [g, b, allTop100, statsData] = await Promise.all([
       getItems("game", 6, "completed"),
       getItems("book", 6, "completed"),
-      getSongs("yearly", currentYear),
       getSongs("top100"),
       getStats(),
     ]);
     setGames(g);
     setBooks(b);
-    setYearSongs(ys);
-    setTopSongs(allTop100.slice(0, 5));
+    setTop100(allTop100);
     setStats(statsData);
     setLoading(false);
-  }, [currentYear]);
+  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -172,8 +393,8 @@ const Home = () => {
     handle: item.rating ? `⭐ ${item.rating}/10` : "No rating",
     borderColor: isGame ? "#7c3aed" : "#10B981",
     gradient: isGame
-      ? isDark ? "linear-gradient(145deg, #1a0533, #000)" : "linear-gradient(145deg, #ede9fe, #f5f3ff)"
-      : isDark ? "linear-gradient(145deg, #0a2e1a, #000)" : "linear-gradient(145deg, #d1fae5, #f0fdf4)",
+      ? isDark ? "linear-gradient(145deg,#1a0533,#000)" : "linear-gradient(145deg,#ede9fe,#f5f3ff)"
+      : isDark ? "linear-gradient(145deg,#0a2e1a,#000)" : "linear-gradient(145deg,#d1fae5,#f0fdf4)",
   }));
 
   const totalItems = games.length + books.length;
@@ -185,18 +406,16 @@ const Home = () => {
 
         {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: "36px", animation: "fadeUp 0.5s ease both" }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: "8px",
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px",
             padding: "5px 14px", borderRadius: "20px", marginBottom: "16px",
-            background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.2)",
-          }}>
+            background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.2)" }}>
             <span style={{ width: "7px", height: "7px", borderRadius: "50%",
               background: "#10b981", animation: "pulse 2s ease infinite" }} />
             <span style={{ color: "#7c3aed", fontSize: "12px", fontWeight: "700", letterSpacing: "0.5px" }}>
               YOUR PERSONAL DIARY
             </span>
           </div>
-          <h1 style={{ color: "var(--text-color)", fontSize: "clamp(28px, 5vw, 42px)",
+          <h1 style={{ color: "var(--text-color)", fontSize: "clamp(28px,5vw,42px)",
             fontWeight: "900", margin: "0 0 10px", letterSpacing: "-1px", lineHeight: 1.1 }}>
             🌐 Web Diary
           </h1>
@@ -205,79 +424,34 @@ const Home = () => {
           </p>
         </div>
 
-        {/* Stat pills */}
-        <div className="home-pills" style={{
-          display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "12px", marginBottom: "24px",
-        }}>
-        <StatPill emoji="✅" value={stats?.total ?? (games.length + books.length)}  label="Total completed" color="#7c3aed" />
-        <StatPill emoji="📚" value={stats?.by_type?.find(t => t.type === "book")?.count ?? books.length} label="Books finished"  color="#10b981" />
-        <StatPill emoji="🎮" value={stats?.by_type?.find(t => t.type === "game")?.count ?? games.length} label="Games completed" color="#7c3aed" />
-        <StatPill emoji="⭐" value={stats?.avg_rating ?? (() => {
-          const rated = [...games, ...books].filter(i => i.rating);
-          return rated.length ? (rated.reduce((s, i) => s + i.rating, 0) / rated.length).toFixed(1) : "—";
-        })()} label="Avg rating" color="#f59e0b" />
+        {/* Stat Pills */}
+        <div className="home-pills" style={{ display: "grid",
+          gridTemplateColumns: "repeat(4,1fr)", gap: "12px", marginBottom: "24px" }}>
+          <StatPill emoji="✅" value={stats?.total ?? (games.length + books.length)} label="Total completed" color="#7c3aed" />
+          <StatPill emoji="📚" value={stats?.by_type?.find(t => t.type === "book")?.count ?? books.length} label="Books finished" color="#10b981" />
+          <StatPill emoji="🎮" value={stats?.by_type?.find(t => t.type === "game")?.count ?? games.length} label="Games completed" color="#7c3aed" />
+          <StatPill emoji="⭐" value={stats?.avg_rating ?? (() => {
+            const rated = [...games, ...books].filter(i => i.rating);
+            return rated.length ? (rated.reduce((s,i) => s + i.rating, 0) / rated.length).toFixed(1) : "—";
+          })()} label="Avg rating" color="#f59e0b" />
         </div>
 
-        {/* Games | Music | Books */}
-        <div className="home-main-grid" style={{
-          display: "grid", gridTemplateColumns: "1fr 280px 1fr",
-          gap: "16px", marginBottom: "16px",
-        }}>
+        {/* Main grid */}
+        <div className="home-main-grid" style={{ display: "grid",
+          gridTemplateColumns: "1fr 280px 1fr", gap: "16px", marginBottom: "16px" }}>
+
           <Block title="🎮 Completed Games" accent="#7c3aed" minHeight="320px">
             {loading ? <Loader /> : games.length === 0
               ? <EmptyState emoji="🎮" text="No games completed yet" />
-              : <ChromaGrid items={toGridItems(games, true)} columns={3} rows={2} radius={250} />
-            }
+              : <ChromaGrid items={toGridItems(games, true)} columns={3} rows={2} radius={250} />}
           </Block>
 
-          {/* Center column */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            <Block title="🔥 Top Picks" accent="#f59e0b" minHeight="auto" style={{ flex: 1 }}>
-              {loading ? <Loader /> : topSongs.length === 0
-                ? <EmptyState emoji="🎵" text="Add songs to Top 100" />
-                : topSongs.map(s => <SongRow key={s.id} song={s} />)
-              }
-            </Block>
-
-            <Block title={`🗓 Top Songs ${currentYear}`} accent="#10b981" minHeight="auto" style={{ flex: 1 }}>
-              {loading ? <Loader /> : yearSongs.length === 0
-                ? <EmptyState emoji="🎶" text={`No songs for ${currentYear}`} />
-                : yearSongs.map(s => <SongRow key={s.id} song={s} />)
-              }
-            </Block>
-
-            {/* Quick links */}
-            <div className="home-card" style={{
-              background: "linear-gradient(135deg, rgba(124,58,237,0.15), rgba(16,185,129,0.08))",
-              borderRadius: "16px", border: "1px solid var(--block-border)",
-              padding: "16px", display: "flex", flexDirection: "column", gap: "8px",
-            }}>
-              <p style={{ color: "var(--text-color)", opacity: 0.5, fontSize: "11px",
-                fontWeight: "700", letterSpacing: "0.6px", margin: 0 }}>QUICK LINKS</p>
-              {[
-                { label: "📋 My Completed List", href: "/completed" },
-                { label: "🔍 Browse Catalog",    href: "/catalog" },
-                { label: "🤖 AI Suggestions",    href: "/suggestions" },
-              ].map(({ label, href }) => (
-                <a key={href} href={href} style={{
-                  display: "block", padding: "8px 12px", borderRadius: "10px",
-                  background: "rgba(255,255,255,0.04)", border: "1px solid var(--block-border)",
-                  color: "var(--text-color)", textDecoration: "none", fontSize: "13px",
-                  fontWeight: "600", transition: "background 0.2s",
-                }}
-                  onMouseEnter={e => e.currentTarget.style.background = "rgba(124,58,237,0.12)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
-                >{label}</a>
-              ))}
-            </div>
-          </div>
+          <SongOfDayWidget top100={top100} />
 
           <Block title="📚 Completed Books" accent="#10b981" minHeight="320px">
             {loading ? <Loader /> : books.length === 0
               ? <EmptyState emoji="📚" text="No books completed yet" />
-              : <ChromaGrid items={toGridItems(books, false)} columns={3} rows={2} radius={250} />
-            }
+              : <ChromaGrid items={toGridItems(books, false)} columns={3} rows={2} radius={250} />}
           </Block>
         </div>
 
@@ -308,13 +482,11 @@ const Home = () => {
           </Block>
         )}
 
-        {/* Empty state */}
+        {/* Empty banner */}
         {!loading && totalItems === 0 && (
-          <div className="home-card" style={{
-            textAlign: "center", padding: "40px 20px",
+          <div className="home-card" style={{ textAlign: "center", padding: "40px 20px",
             background: "var(--block-bg)", backdropFilter: "blur(14px)",
-            borderRadius: "20px", border: "1px dashed var(--block-border)",
-          }}>
+            borderRadius: "20px", border: "1px dashed var(--block-border)" }}>
             <div style={{ fontSize: "48px", marginBottom: "12px" }}>🚀</div>
             <h3 style={{ color: "var(--text-color)", fontWeight: "800", margin: "0 0 8px" }}>
               Your diary is empty — let's fill it!
@@ -322,14 +494,13 @@ const Home = () => {
             <p style={{ color: "var(--text-color)", opacity: 0.45, fontSize: "14px", margin: "0 0 20px" }}>
               Head to the Completed page to add your first game or book.
             </p>
-            <a href="/completed" style={{
-              display: "inline-block", padding: "12px 28px", borderRadius: "12px",
-              background: "linear-gradient(135deg,#7c3aed,#5b21b6)",
-              color: "white", fontWeight: "700", fontSize: "14px", textDecoration: "none",
-            }}>➕ Add First Entry</a>
+            <a href="/completed" style={{ display: "inline-block", padding: "12px 28px",
+              borderRadius: "12px", background: "linear-gradient(135deg,#7c3aed,#5b21b6)",
+              color: "white", fontWeight: "700", fontSize: "14px", textDecoration: "none" }}>
+              ➕ Add First Entry
+            </a>
           </div>
         )}
-
       </div>
     </>
   );

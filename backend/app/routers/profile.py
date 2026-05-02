@@ -22,3 +22,18 @@ def save_profile(
     current_user: models.User = Depends(get_current_user)
 ):
     return crud.upsert_profile(db, user_id=current_user.id, profile_data=profile)
+
+import json
+
+@router.patch("/song-of-day")
+def set_song_of_day(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    profile = crud.get_profile(db, user_id=current_user.id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    profile.song_of_day = json.dumps(payload)
+    db.commit()
+    return {"message": "ok"}

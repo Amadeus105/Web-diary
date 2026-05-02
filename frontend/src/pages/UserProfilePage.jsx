@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -18,6 +18,10 @@ const UserProfilePage = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const audioRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     setLoading(true);
@@ -46,6 +50,13 @@ const UserProfilePage = () => {
   return (
     <>
       <style>{STYLES}</style>
+      <audio ref={audioRef}
+        onEnded={() => { setPlaying(false); setProgress(0); }}
+        onTimeUpdate={() => {
+          if (audioRef.current)
+            setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100 || 0);
+        }}
+      />
       <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px 16px 60px" }}>
 
         {/* Profile header card */}
@@ -107,6 +118,68 @@ const UserProfilePage = () => {
               </div>
             </div>
           </div>
+
+          {/* Song of the Day */}
+          {(() => {
+            try {
+              const s = data.song_of_day ? JSON.parse(data.song_of_day) : null;
+              if (!s) return null;
+              const togglePlay = async () => {
+                if (playing) {
+                  audioRef.current.pause();
+                  setPlaying(false);
+                  return;
+                }
+                setLoadingPreview(true);
+                try {
+                  const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(s.title + " " + s.artist)}&media=music&entity=song&limit=1`);
+                  const json = await res.json();
+                  const url = json.results?.[0]?.previewUrl;
+                  if (url) {
+                    audioRef.current.src = url;
+                    audioRef.current.play();
+                    setPlaying(true);
+                  }
+                } catch {}
+                setLoadingPreview(false);
+              };
+              return (
+                <div style={{
+                  background: "var(--block-bg)", borderRadius: "16px",
+                  border: "1px solid var(--block-border)", padding: "14px 16px",
+                  minWidth: "200px", maxWidth: "260px", flexShrink: 0,
+                }}>
+                  <p style={{ color: "var(--text-color)", opacity: 0.45, fontSize: "10px",
+                    fontWeight: "700", letterSpacing: "0.6px", margin: "0 0 10px" }}>🎵 SONG OF THE DAY</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    {s.cover_url
+                      ? <img src={s.cover_url} alt={s.title} style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
+                      : <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: "rgba(245,158,11,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>🎵</div>
+                    }
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ color: "var(--text-color)", fontWeight: "700", fontSize: "13px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</div>
+                      <div style={{ color: "var(--text-color)", opacity: 0.5, fontSize: "11px" }}>{s.artist}</div>
+                    </div>
+                    <button onClick={togglePlay} style={{
+                      width: "30px", height: "30px", borderRadius: "50%", border: "none",
+                      cursor: "pointer", flexShrink: 0, fontSize: "12px",
+                      background: playing ? "#f59e0b" : "rgba(245,158,11,0.15)",
+                      color: playing ? "white" : "#f59e0b",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      {loadingPreview ? "⏳" : playing ? "⏸" : "▶"}
+                    </button>
+                  </div>
+                  {playing && (
+                    <div style={{ marginTop: "8px", background: "var(--block-border)", borderRadius: "4px", height: "2px" }}>
+                      <div style={{ width: `${progress}%`, height: "100%", borderRadius: "4px",
+                        background: "#f59e0b", transition: "width 0.5s linear" }} />
+                    </div>
+                  )}
+                </div>
+              );
+            } catch { return null; }
+          })()}
 
           {/* Actions */}
           <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
