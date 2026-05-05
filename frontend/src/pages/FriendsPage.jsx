@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import BookLoader from "../components/BookLoader";
 
 const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 const getToken = () => localStorage.getItem("token");
@@ -141,7 +142,7 @@ const FriendsPage = () => {
             {tab === "friends" && (
               <Block accent="#7c3aed">
                 {loading ? (
-                  <p style={{ color: "var(--text-color)", opacity: 0.4, fontSize: "13px" }}>Loading...</p>
+                  <BookLoader text="Loading friends..." height="160px" />
                 ) : friends.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "40px 20px",
                     color: "var(--text-color)", opacity: 0.3 }}>

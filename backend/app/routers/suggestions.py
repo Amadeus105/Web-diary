@@ -22,7 +22,7 @@ async def call_openrouter(prompt: str, max_tokens: int = 500) -> str:
                 "Content-Type": "application/json"
             },
             json={
-                "model": "google/gemma-3-4b-it:free",
+                "model": "openai/gpt-oss-20b:free",
                 "messages": [{"role": "user", "content": prompt}],
                 "max_tokens": max_tokens
             }

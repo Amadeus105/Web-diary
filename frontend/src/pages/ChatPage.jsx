@@ -163,7 +163,7 @@ const ChatPage = () => {
   }, [partnerId, partnerInfo]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    endRef.current?.scrollIntoView({ behavior: "auto" });
   }, [messages]);
 
   const sendMessage = () => {

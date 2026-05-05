@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import BookLoader from "../components/BookLoader";
 
 const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 const H = () => ({ Authorization: `Bearer ${localStorage.getItem("token")}` });
@@ -30,11 +31,7 @@ const UserProfilePage = () => {
       .catch(() => setLoading(false));
   }, [username]);
 
-  if (loading) return (
-    <div style={{ textAlign: "center", padding: "80px", color: "var(--text-color)", opacity: 0.4 }}>
-      Loading...
-    </div>
-  );
+  if (loading) return <BookLoader text="Loading profile..." />;
 
   if (!data) return (
     <div style={{ textAlign: "center", padding: "80px", color: "var(--text-color)", opacity: 0.4 }}>
