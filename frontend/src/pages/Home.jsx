@@ -112,9 +112,10 @@ const SongOfDayWidget = ({ top100 }) => {
   const [playing, setPlaying]   = useState(false);
   const [progress, setProgress] = useState(0);
 
-  // Вместо: const songOfDay = top100[new Date().getDate() % top100.length]
-    const saved = JSON.parse(localStorage.getItem("songOfDay") || "null");
-    const songOfDay = saved || top100[0]; // fallback если ещё не выбрано
+const dayOfYear = Math.floor(
+  (new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000
+);
+const songOfDay = top100.length > 0 ? top100[dayOfYear % top100.length] : null;
 
   useEffect(() => {
     if (!search.trim()) { setResults([]); return; }
