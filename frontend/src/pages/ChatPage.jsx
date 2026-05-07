@@ -91,9 +91,11 @@ const ChatPage = () => {
 
   const wsRef        = useRef(null);
   const partnerIdRef = useRef(partnerId);
+  const myIdRef      = useRef(null);
   const endRef       = useRef(null);
 
   useEffect(() => { partnerIdRef.current = partnerId; }, [partnerId]);
+  useEffect(() => { myIdRef.current = myId; }, [myId]);
 
   // On mobile — show sidebar when no partner selected
   useEffect(() => {
@@ -113,12 +115,35 @@ const ChatPage = () => {
     const connect = () => {
       const ws = new WebSocket(`${WS_URL}/chat/ws/${getToken()}`);
       wsRef.current = ws;
-      ws.onopen = () => setWsReady(true);
+      ws.onopen = () => {
+        setWsReady(true);
+        // Re-fetch history on (re)connect so missed messages appear immediately
+        const pid = partnerIdRef.current;
+        if (pid) {
+          axios.get(`${BASE_URL}/chat/history/${pid}`, { headers: H() })
+            .then(r => setMessages(r.data))
+            .catch(() => {});
+        }
+        fetchConversations();
+      };
       ws.onmessage = (e) => {
         const msg = JSON.parse(e.data);
-        const pid = partnerIdRef.current;
+        const pid  = partnerIdRef.current;
+        const me   = myIdRef.current;
         if (pid && (String(msg.sender_id) === String(pid) || String(msg.receiver_id) === String(pid))) {
-          setMessages(prev => prev.find(m => m.id === msg.id) ? prev : [...prev, msg]);
+          setMessages(prev => {
+            // If this is the echo of our own optimistic message, swap it with the real one
+            if (String(msg.sender_id) === String(me)) {
+              const idx = prev.findIndex(m => m.optimistic && m.content === msg.content);
+              if (idx !== -1) {
+                const next = [...prev];
+                next[idx] = msg;
+                return next;
+              }
+            }
+            // Avoid real duplicates
+            return prev.find(m => m.id === msg.id) ? prev : [...prev, msg];
+          });
         }
         fetchConversations();
       };
@@ -168,10 +193,20 @@ const ChatPage = () => {
 
   const sendMessage = () => {
     const ws = wsRef.current;
-    if (!input.trim() || !ws) return;
+    if (!input.trim() || !ws || !myId) return;
     if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ receiver_id: Number(partnerId), content: input.trim() }));
+      const content = input.trim();
       setInput("");
+      // Optimistic: show the message immediately without waiting for WS echo
+      setMessages(prev => [...prev, {
+        id: `opt-${Date.now()}`,
+        sender_id: myId,
+        receiver_id: Number(partnerId),
+        content,
+        created_at: new Date().toISOString(),
+        optimistic: true,
+      }]);
+      ws.send(JSON.stringify({ receiver_id: Number(partnerId), content }));
     }
   };
 
