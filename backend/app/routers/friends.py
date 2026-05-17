@@ -255,8 +255,7 @@ def public_profile(
     items = None
     if not user.is_private or is_friend or user.id == current_user.id:
         items = db.query(models.Item).filter(
-            models.Item.user_id == user.id,
-            models.Item.status == "completed"
+            models.Item.user_id == user.id
         ).order_by(models.Item.id.desc()).all()
 
     return {
@@ -273,6 +272,7 @@ def public_profile(
             {
                 "id": i.id, "name": i.name, "type": i.type,
                 "cover_url": i.cover_url, "rating": i.rating,
+                "status": i.status,
                 "finished_date": str(i.finished_date) if i.finished_date else None,
             }
             for i in (items or [])

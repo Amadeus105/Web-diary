@@ -40,9 +40,17 @@ const UserProfilePage = () => {
   );
 
   const items = data.items || [];
-  const filtered = filter === "all" ? items : items.filter(i => i.type === filter);
-  const gameCount = items.filter(i => i.type === "game").length;
-  const bookCount = items.filter(i => i.type === "book").length;
+  const completedItems  = items.filter(i => i.status === "completed");
+  const wishlistItems   = items.filter(i => i.status === "wishlist");
+  const gameCount       = items.filter(i => i.type === "game").length;
+  const bookCount       = items.filter(i => i.type === "book").length;
+  const wishlistCount   = wishlistItems.length;
+
+  const filtered =
+    filter === "all"       ? items :
+    filter === "wishlist"  ? wishlistItems :
+    filter === "completed" ? completedItems :
+    items.filter(i => i.type === filter);  // "game" | "book"
 
   return (
     <>
@@ -104,7 +112,7 @@ const UserProfilePage = () => {
             )}
 
             {/* Stats */}
-            <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+             <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
               <div>
                 <span style={{ color: "var(--text-color)", fontWeight: "900", fontSize: "20px" }}>{gameCount}</span>
                 <span style={{ color: "var(--text-color)", opacity: 0.45, fontSize: "12px", marginLeft: "5px" }}>games</span>
@@ -113,6 +121,12 @@ const UserProfilePage = () => {
                 <span style={{ color: "var(--text-color)", fontWeight: "900", fontSize: "20px" }}>{bookCount}</span>
                 <span style={{ color: "var(--text-color)", opacity: 0.45, fontSize: "12px", marginLeft: "5px" }}>books</span>
               </div>
+              {wishlistCount > 0 && (
+                <div>
+                  <span style={{ color: "var(--text-color)", fontWeight: "900", fontSize: "20px" }}>{wishlistCount}</span>
+                  <span style={{ color: "var(--text-color)", opacity: 0.45, fontSize: "12px", marginLeft: "5px" }}>wishlist</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -212,11 +226,12 @@ const UserProfilePage = () => {
         {(!data.is_private || data.is_friend) && (
           <>
             {/* Filter tabs */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+             <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
               {[
-                { key: "all",  label: `All (${items.length})` },
-                { key: "game", label: `🎮 Games (${gameCount})` },
-                { key: "book", label: `📚 Books (${bookCount})` },
+                { key: "all",      label: `All (${items.length})` },
+                { key: "game",     label: `🎮 Games (${gameCount})` },
+                { key: "book",     label: `📚 Books (${bookCount})` },
+                ...(wishlistCount > 0 ? [{ key: "wishlist", label: `📋 Wishlist (${wishlistCount})` }] : []),
               ].map(({ key, label }) => (
                 <button key={key} onClick={() => setFilter(key)} style={{
                   padding: "7px 16px", borderRadius: "20px", cursor: "pointer",
@@ -255,7 +270,7 @@ const UserProfilePage = () => {
                         fontSize: "36px", position: "relative",
                       }}>
                         {!item.cover_url && (TYPE_EMOJI[item.type] ?? "📄")}
-                        <div style={{
+                          <div style={{
                           position: "absolute", top: "8px", left: "8px",
                           padding: "2px 8px", borderRadius: "20px",
                           background: "rgba(0,0,0,0.55)", color: accent,
@@ -263,6 +278,14 @@ const UserProfilePage = () => {
                         }}>
                           {TYPE_EMOJI[item.type]} {item.type}
                         </div>
+                        {item.status === "wishlist" && (
+                          <div style={{
+                            position: "absolute", top: "8px", right: "8px",
+                            padding: "2px 8px", borderRadius: "20px",
+                            background: "rgba(0,0,0,0.55)", color: "#f59e0b",
+                            fontSize: "10px", fontWeight: "700",
+                          }}>📋</div>
+                        )}
                       </div>
                       <div style={{ padding: "10px 12px" }}>
                         <p style={{ color: "var(--text-color)", fontWeight: "700", fontSize: "13px",

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { useAuth } from "./context/AuthContext";
 
 import ParticlesBackground from "./components/Particles";
+import AuroraBackground    from "./components/AuroraBackground";
 import CardNavbar from "./components/CardNavbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -27,6 +28,8 @@ const AdminRoute = ({ children }) => {
   return user?.is_admin ? children : <Navigate to="/" />;
 };
 
+const DARK_THEMES = ["dark", "dark-purple", "dark-navy", "dark-forest"];
+
 function App() {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("theme") || "light";
@@ -36,8 +39,12 @@ function App() {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
+  const isLight = theme === "light";
+
   const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
+    const newTheme = isLight
+      ? DARK_THEMES[Math.floor(Math.random() * DARK_THEMES.length)]
+      : "light";
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
     document.documentElement.setAttribute("data-theme", newTheme);
@@ -45,7 +52,10 @@ function App() {
 
   return (
     <Router>
-      {theme === "dark" && <ParticlesBackground />}
+      {theme === "dark"        && <ParticlesBackground />}
+      {theme === "dark-purple" && <AuroraBackground />}
+      {theme === "dark-navy"   && <AuroraBackground />}
+      {theme === "dark-forest" && <AuroraBackground />}
 
       {/* Vignette sides */}
       <div style={{
@@ -63,7 +73,7 @@ function App() {
       <div style={{
         paddingTop: "80px",
         minHeight: "100vh",
-        backgroundColor: theme === "dark" ? "transparent" : "var(--bg-color)",
+        backgroundColor: isLight ? "var(--bg-color)" : "transparent",
         color: "var(--text-color)",
         transition: "background-color 0.3s, color 0.3s",
         position: "relative",
