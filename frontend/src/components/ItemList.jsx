@@ -1,10 +1,31 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { getItems, deleteItem, updateItem, markItemComplete } from "../services/api";
+import { getItems, deleteItem, updateItem, markItemComplete, toggleItemHidden } from "../services/api";
 import AddItem from "./AddItem";
 
 /* ─── constants ─────────────────────────────────────────── */
-const TYPE_ACCENT  = { game: "#10b981", book: "#7c3aed" };
-const TYPE_EMOJI   = { game: "🎮", book: "📚" };
+const TYPE_ACCENT = {
+  game:    "#10b981",
+  book:    "#7c3aed",
+  movie:   "#ef4444",
+  cartoon: "#f59e0b",
+  anime:   "#ec4899",
+};
+const TYPE_EMOJI = {
+  game:    "🎮",
+  book:    "📚",
+  movie:   "🎬",
+  cartoon: "🎨",
+  anime:   "⛩️",
+};
+const TYPE_LABEL = {
+  game:    "Games",
+  book:    "Books",
+  movie:   "Movies",
+  cartoon: "Cartoons",
+  anime:   "Anime",
+};
+
+const ALL_TYPES = ["game", "book", "movie", "cartoon", "anime"];
 
 const StarRating = ({ value, max = 10 }) => (
   <span style={{ fontSize: "12px", letterSpacing: "0.5px" }}>
@@ -15,8 +36,8 @@ const StarRating = ({ value, max = 10 }) => (
 );
 
 /* ─── Detail Modal ──────────────────────────────────────── */
-const DetailModal = ({ item, onClose, onEdit, onDelete, onMarkComplete }) => {
-  const accent = TYPE_ACCENT[item.type] ?? "#7c3aed";
+const DetailModal = ({ item, onClose, onEdit, onDelete, onMarkComplete, onToggleHidden }) => {
+  const accent    = TYPE_ACCENT[item.type] ?? "#7c3aed";
   const isWishlist = item.status === "wishlist";
 
   useEffect(() => {
@@ -41,7 +62,6 @@ const DetailModal = ({ item, onClose, onEdit, onDelete, onMarkComplete }) => {
         boxShadow: `0 24px 64px rgba(0,0,0,0.35), 0 0 0 1px ${accent}22`,
         animation: "detailIn 0.2s ease",
       }}>
-        {/* Cover */}
         <div style={{
           height: "220px", position: "relative",
           background: item.cover_url
@@ -76,6 +96,12 @@ const DetailModal = ({ item, onClose, onEdit, onDelete, onMarkComplete }) => {
                 background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.4)", color: "#f59e0b",
               }}>🔖 Wishlist</span>
             )}
+            {item.is_hidden && (
+              <span style={{
+                padding: "4px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "700",
+                background: "rgba(100,100,100,0.2)", border: "1px solid rgba(100,100,100,0.4)", color: "#aaa",
+              }}>🙈 Hidden</span>
+            )}
           </div>
           <div style={{ position: "absolute", bottom: "16px", left: "20px", right: "20px" }}>
             <h2 style={{ color: "white", fontWeight: "900", fontSize: "22px",
@@ -85,7 +111,6 @@ const DetailModal = ({ item, onClose, onEdit, onDelete, onMarkComplete }) => {
           </div>
         </div>
 
-        {/* Body */}
         <div style={{ padding: "20px 24px 24px" }}>
           <div style={{ display: "flex", gap: "20px", marginBottom: "16px", flexWrap: "wrap" }}>
             {item.rating != null && (
@@ -123,13 +148,6 @@ const DetailModal = ({ item, onClose, onEdit, onDelete, onMarkComplete }) => {
             </div>
           )}
 
-          {isWishlist && !item.notes && !item.rating && (
-            <div style={{ textAlign: "center", padding: "8px 0 16px",
-              color: "var(--text-color)", opacity: 0.35, fontSize: "13px" }}>
-              No details yet — add notes and a rating once you finish it!
-            </div>
-          )}
-
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             {isWishlist && (
               <button onClick={onMarkComplete} style={{
@@ -143,11 +161,20 @@ const DetailModal = ({ item, onClose, onEdit, onDelete, onMarkComplete }) => {
               background: "linear-gradient(135deg,#7c3aed,#5b21b6)",
               color: "white", fontWeight: "700", fontSize: "13px", cursor: "pointer", minWidth: "80px",
             }}>✏️ Edit</button>
+            <button onClick={onToggleHidden} style={{
+              padding: "11px 14px", borderRadius: "10px",
+              border: `1px solid ${item.is_hidden ? "rgba(100,100,100,0.4)" : "rgba(100,100,100,0.25)"}`,
+              background: item.is_hidden ? "rgba(100,100,100,0.15)" : "transparent",
+              color: item.is_hidden ? "#aaa" : "var(--text-color)",
+              fontWeight: "700", fontSize: "13px", cursor: "pointer",
+            }} title={item.is_hidden ? "Show in profile" : "Hide from profile"}>
+              {item.is_hidden ? "👁 Show" : "🙈 Hide"}
+            </button>
             <button onClick={onDelete} style={{
               padding: "11px 16px", borderRadius: "10px",
               border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.08)",
               color: "#ef4444", fontWeight: "700", fontSize: "13px", cursor: "pointer",
-            }}>🗑 Delete</button>
+            }}>🗑</button>
           </div>
         </div>
       </div>
@@ -200,17 +227,17 @@ const EditModal = ({ item, onSave, onCancel }) => {
           </div>
           <div>
             <label style={labelStyle}>Type</label>
-            <div style={{ display: "flex", gap: "8px" }}>
-              {["game", "book"].map(t => (
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              {ALL_TYPES.map(t => (
                 <button key={t} type="button" onClick={() => setType(t)} style={{
-                  flex: 1, padding: "10px", borderRadius: "10px", cursor: "pointer",
+                  padding: "8px 12px", borderRadius: "10px", cursor: "pointer",
                   border: type === t ? "none" : "1px solid var(--block-border)",
                   background: type === t
-                    ? (t === "game" ? "linear-gradient(135deg,#10b981,#059669)" : "linear-gradient(135deg,#7c3aed,#5b21b6)")
+                    ? `linear-gradient(135deg,${TYPE_ACCENT[t]},${TYPE_ACCENT[t]}cc)`
                     : "rgba(255,255,255,0.04)",
-                  color: type === t ? "white" : "var(--text-color)", fontWeight: "700", fontSize: "13px",
+                  color: type === t ? "white" : "var(--text-color)", fontWeight: "700", fontSize: "12px",
                 }}>
-                  {t === "game" ? "🎮 Game" : "📚 Book"}
+                  {TYPE_EMOJI[t]} {TYPE_LABEL[t]}
                 </button>
               ))}
             </div>
@@ -265,7 +292,7 @@ const EditModal = ({ item, onSave, onCancel }) => {
 /* ─── Item Card ─────────────────────────────────────────── */
 const ItemCard = ({ item, onClick }) => {
   const [hovered, setHovered] = useState(false);
-  const accent = TYPE_ACCENT[item.type] ?? "#7c3aed";
+  const accent     = TYPE_ACCENT[item.type] ?? "#7c3aed";
   const isWishlist = item.status === "wishlist";
 
   return (
@@ -279,7 +306,7 @@ const ItemCard = ({ item, onClick }) => {
         transform: hovered ? "translateY(-4px)" : "none",
         boxShadow: hovered ? `0 16px 40px rgba(0,0,0,0.18), 0 0 0 1px ${accent}33` : "0 4px 20px rgba(0,0,0,0.08)",
         display: "flex", flexDirection: "column",
-        opacity: isWishlist ? 0.88 : 1,
+        opacity: item.is_hidden ? 0.55 : isWishlist ? 0.88 : 1,
       }}>
       <div style={{
         height: "160px", position: "relative", flexShrink: 0,
@@ -300,6 +327,14 @@ const ItemCard = ({ item, onClick }) => {
             fontSize: "10px", fontWeight: "800", padding: "3px 10px",
             borderRadius: "4px 0 0 4px",
           }}>🔖 WISHLIST</div>
+        )}
+        {item.is_hidden && (
+          <div style={{
+            position: "absolute", top: isWishlist ? "32px" : "10px", right: 0,
+            background: "rgba(80,80,80,0.85)", color: "#ccc",
+            fontSize: "10px", fontWeight: "800", padding: "3px 10px",
+            borderRadius: "4px 0 0 4px",
+          }}>🙈 HIDDEN</div>
         )}
         <div style={{
           position: "absolute", top: "10px", left: "10px",
@@ -361,17 +396,30 @@ const ItemList = () => {
     fetchItems();
   };
 
-  const tabItems = items.filter(i => (i.status ?? "completed") === tab);
-  const filtered = tabItems.filter(i => typeFilter === "all" || i.type === typeFilter);
-  const counts = {
-    completed: items.filter(i => (i.status ?? "completed") === "completed").length,
-    wishlist:  items.filter(i => i.status === "wishlist").length,
-    game: tabItems.filter(i => i.type === "game").length,
-    book: tabItems.filter(i => i.type === "book").length,
+  const handleToggleHidden = async (id) => {
+    const result = await toggleItemHidden(id);
+    setItems(prev => prev.map(i => i.id === id ? { ...i, is_hidden: result.is_hidden } : i));
+    setDetailItem(prev => prev ? { ...prev, is_hidden: result.is_hidden } : null);
   };
 
-  const tabBtn = (key, label) => (
-    <button key={key} onClick={() => { setTab(key); setTypeFilter("all"); }} style={{
+  const completedItems = items.filter(i => (i.status ?? "completed") === "completed");
+  const wishlistItems  = items.filter(i => i.status === "wishlist");
+  const completedCount = completedItems.length;
+  const wishlistCount  = wishlistItems.length;
+
+  // Count per type for badges
+  const typeCounts = ALL_TYPES.reduce((acc, t) => {
+    acc[t] = completedItems.filter(i => i.type === t).length;
+    return acc;
+  }, {});
+
+  // Filter completed items by selected type
+  const visibleCompleted = typeFilter === "all"
+    ? completedItems
+    : completedItems.filter(i => i.type === typeFilter);
+
+  const tabBtn = (key, label, count) => (
+    <button key={key} onClick={() => setTab(key)} style={{
       padding: "9px 20px", borderRadius: "30px", cursor: "pointer",
       border: tab === key ? "none" : "1px solid var(--block-border)",
       background: tab === key ? "linear-gradient(135deg,#7c3aed,#5b21b6)" : "transparent",
@@ -381,58 +429,96 @@ const ItemList = () => {
       {label}
       <span style={{ marginLeft: "7px", padding: "1px 7px", borderRadius: "10px", fontSize: "11px",
         background: tab === key ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.07)" }}>
-        {counts[key]}
+        {count}
       </span>
     </button>
   );
 
-  const typeBtn = (key, label) => (
-    <button key={key} onClick={() => setTypeFilter(key)} style={{
-      padding: "6px 14px", borderRadius: "20px", cursor: "pointer",
-      border: typeFilter === key ? "none" : "1px solid var(--block-border)",
-      background: typeFilter === key ? "rgba(124,58,237,0.18)" : "transparent",
-      color: typeFilter === key ? "#7c3aed" : "var(--text-color)",
-      fontWeight: "600", fontSize: "12px", transition: "all 0.15s", opacity: typeFilter === key ? 1 : 0.5,
-    }}>{label}</button>
-  );
+  const typeFilterBtn = (key, label, count, accent) => {
+    const active = typeFilter === key;
+    return (
+      <button key={key} onClick={() => setTypeFilter(key)} style={{
+        padding: "7px 16px", borderRadius: "20px", cursor: "pointer",
+        border: active ? "none" : "1px solid var(--block-border)",
+        background: active
+          ? key === "all" ? "linear-gradient(135deg,#7c3aed,#5b21b6)" : accent
+          : "transparent",
+        color: active ? "white" : "var(--text-color)",
+        fontWeight: "700", fontSize: "12px", transition: "all 0.2s",
+        opacity: active ? 1 : 0.55,
+        display: "flex", alignItems: "center", gap: "5px",
+      }}>
+        {label}
+        {count > 0 && (
+          <span style={{
+            padding: "1px 6px", borderRadius: "10px", fontSize: "10px",
+            background: active ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.07)",
+          }}>{count}</span>
+        )}
+      </button>
+    );
+  };
 
   return (
     <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 16px 60px" }}>
       <AddItem onItemAdded={fetchItems} />
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexWrap: "wrap", gap: "12px", margin: "28px 0 16px" }}>
-        <div style={{ display: "flex", gap: "8px" }}>
-          {tabBtn("completed", "✅ Completed")}
-          {tabBtn("wishlist",  "🔖 Wishlist")}
-        </div>
-        <div style={{ display: "flex", gap: "6px" }}>
-          {typeBtn("all",  `All (${counts.game + counts.book})`)}
-          {typeBtn("game", `🎮 ${counts.game}`)}
-          {typeBtn("book", `📚 ${counts.book}`)}
-        </div>
+      {/* Main tabs: Completed / Wishlist */}
+      <div style={{ display: "flex", gap: "8px", margin: "28px 0 0" }}>
+        {tabBtn("completed", "✅ Completed", completedCount)}
+        {tabBtn("wishlist",  "🔖 Wishlist",  wishlistCount)}
       </div>
 
-      {tab === "wishlist" && counts.wishlist === 0 ? (
-        <div style={{
-          background: "rgba(245,158,11,0.07)", border: "1px dashed rgba(245,158,11,0.3)",
-          borderRadius: "14px", padding: "16px 20px", color: "var(--text-color)",
-          opacity: 0.7, fontSize: "14px",
-        }}>
-          🔖 Your wishlist is empty — add items and set status to <b>Wishlist</b> when adding!
-        </div>
-      ) : filtered.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "80px 20px", color: "var(--text-color)", opacity: 0.35 }}>
-          <div style={{ fontSize: "56px", marginBottom: "12px" }}>📭</div>
-          <p style={{ fontSize: "15px", fontWeight: "700", margin: "0 0 4px" }}>Nothing here</p>
-          <p style={{ fontSize: "13px", margin: 0 }}>Try a different filter</p>
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: "16px" }}>
-          {filtered.map(item => (
-            <ItemCard key={item.id} item={item} onClick={() => setDetailItem(item)} />
-          ))}
-        </div>
+      {/* ── Completed tab ─────────────────────────────────── */}
+      {tab === "completed" && (
+        <>
+          {/* Type filter row */}
+          <div style={{ display: "flex", gap: "8px", margin: "16px 0 20px", flexWrap: "wrap" }}>
+            {typeFilterBtn("all", "All", completedCount, "#7c3aed")}
+            {typeFilterBtn("game",    `🎮 Games`,    typeCounts.game,    TYPE_ACCENT.game)}
+            {typeFilterBtn("book",    `📚 Books`,    typeCounts.book,    TYPE_ACCENT.book)}
+            {typeFilterBtn("movie",   `🎬 Movies`,   typeCounts.movie,   TYPE_ACCENT.movie)}
+            {typeFilterBtn("cartoon", `🎨 Cartoons`, typeCounts.cartoon, TYPE_ACCENT.cartoon)}
+            {typeFilterBtn("anime",   `⛩️ Anime`,    typeCounts.anime,   TYPE_ACCENT.anime)}
+          </div>
+
+          {visibleCompleted.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "80px 20px", color: "var(--text-color)", opacity: 0.35 }}>
+              <div style={{ fontSize: "56px", marginBottom: "12px" }}>📭</div>
+              <p style={{ fontSize: "15px", fontWeight: "700", margin: "0 0 4px" }}>
+                {typeFilter === "all" ? "Nothing completed yet" : `No ${TYPE_LABEL[typeFilter]} yet`}
+              </p>
+              <p style={{ fontSize: "13px", margin: 0 }}>Search in Catalog and add something!</p>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "14px" }}>
+              {visibleCompleted.map(item => (
+                <ItemCard key={item.id} item={item} onClick={() => setDetailItem(item)} />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Wishlist tab ───────────────────────────────────── */}
+      {tab === "wishlist" && (
+        <>
+          {wishlistCount === 0 ? (
+            <div style={{
+              background: "rgba(245,158,11,0.07)", border: "1px dashed rgba(245,158,11,0.3)",
+              borderRadius: "14px", padding: "16px 20px", color: "var(--text-color)",
+              opacity: 0.7, fontSize: "14px", marginTop: "20px",
+            }}>
+              🔖 Your wishlist is empty — add items and set status to <b>Wishlist</b> when adding!
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "14px", marginTop: "20px" }}>
+              {wishlistItems.map(item => (
+                <ItemCard key={item.id} item={item} onClick={() => setDetailItem(item)} />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {detailItem && (
@@ -442,6 +528,7 @@ const ItemList = () => {
           onEdit={() => { setEditingItem(detailItem); setDetailItem(null); }}
           onDelete={() => handleDelete(detailItem.id)}
           onMarkComplete={() => handleMarkComplete(detailItem.id)}
+          onToggleHidden={() => handleToggleHidden(detailItem.id)}
         />
       )}
       {editingItem && (

@@ -116,6 +116,37 @@ export const searchGames = async (query) => {
   return response.data;
 };
 
+export const searchMovies = async (query) => {
+  const response = await axios.get(`${BASE_URL}/catalog/movies`, {
+    params: { q: query }, headers: authHeaders()
+  });
+  return response.data;
+};
+
+export const searchCartoons = async (query) => {
+  const response = await axios.get(`${BASE_URL}/catalog/cartoons`, {
+    params: { q: query }, headers: authHeaders()
+  });
+  return response.data;
+};
+
+export const searchAnime = async (query) => {
+  const response = await axios.get(`${BASE_URL}/catalog/anime`, {
+    params: { q: query }, headers: authHeaders()
+  });
+  return response.data;
+};
+
+export const toggleItemHidden = async (id) => {
+  const response = await axios.patch(`${BASE_URL}/items/${id}/toggle-hidden`, {}, { headers: authHeaders() });
+  return response.data;
+};
+
+export const setHiddenCategories = async (categories) => {
+  const response = await axios.patch(`${BASE_URL}/profile/hidden-categories`, { categories }, { headers: authHeaders() });
+  return response.data;
+};
+
 export const getSongs = async (listType, year = null) => {
   const params = { list_type: listType };
   if (year) params.year = year;

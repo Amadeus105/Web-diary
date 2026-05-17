@@ -30,7 +30,7 @@ const STYLES = `
 `;
 
 const TYPE_COLORS = {
-  game: "#7c3aed", book: "#10b981", movie: "#f59e0b", anime: "#ef4444",
+  game: "#7c3aed", book: "#10b981", movie: "#ef4444", cartoon: "#f59e0b", anime: "#ec4899",
 };
 
 const Block = ({ title, children, minHeight = "280px", style = {}, accent }) => (
@@ -353,12 +353,15 @@ const songOfDay = top100.length > 0 ? top100[dayOfYear % top100.length] : null;
 
 /* ── Main ── */
 const Home = () => {
-  const [games, setGames]   = useState([]);
-  const [books, setBooks]   = useState([]);
-  const [top100, setTop100] = useState([]);
-  const [stats, setStats]   = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [theme, setTheme]   = useState(document.documentElement.getAttribute("data-theme") || "light");
+  const [games, setGames]       = useState([]);
+  const [books, setBooks]       = useState([]);
+  const [movies, setMovies]     = useState([]);
+  const [cartoons, setCartoons] = useState([]);
+  const [animes, setAnimes]     = useState([]);
+  const [top100, setTop100]     = useState([]);
+  const [stats, setStats]       = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [theme, setTheme]       = useState(document.documentElement.getAttribute("data-theme") || "light");
 
   useEffect(() => {
     const observer = new MutationObserver(() =>
@@ -370,14 +373,20 @@ const Home = () => {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [g, b, allTop100, statsData] = await Promise.all([
-      getItems("game", 6, "completed"),
-      getItems("book", 6, "completed"),
+    const [g, b, mv, ct, an, allTop100, statsData] = await Promise.all([
+      getItems("game",    6, "completed"),
+      getItems("book",    6, "completed"),
+      getItems("movie",   6, "completed"),
+      getItems("cartoon", 6, "completed"),
+      getItems("anime",   6, "completed"),
       getSongs("top100"),
       getStats(),
     ]);
     setGames(g);
     setBooks(b);
+    setMovies(mv);
+    setCartoons(ct);
+    setAnimes(an);
     setTop100(allTop100);
     setStats(statsData);
     setLoading(false);
@@ -385,20 +394,20 @@ const Home = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const isDark = theme === "dark";
+  const isDark = theme !== "light";
 
-  const toGridItems = (items, isGame) => items.map(item => ({
+  const toGridItems = (items, color) => items.map(item => ({
     image: item.cover_url || `https://via.placeholder.com/300x200/170d27/ffffff?text=${encodeURIComponent(item.name)}`,
     title: item.name,
     subtitle: item.finished_date ? `📅 ${item.finished_date}` : "No date",
     handle: item.rating ? `⭐ ${item.rating}/10` : "No rating",
-    borderColor: isGame ? "#7c3aed" : "#10B981",
-    gradient: isGame
-      ? isDark ? "linear-gradient(145deg,#1a0533,#000)" : "linear-gradient(145deg,#ede9fe,#f5f3ff)"
-      : isDark ? "linear-gradient(145deg,#0a2e1a,#000)" : "linear-gradient(145deg,#d1fae5,#f0fdf4)",
+    borderColor: color,
+    gradient: isDark
+      ? `linear-gradient(145deg,#111,#000)`
+      : `linear-gradient(145deg,#f5f5ff,#fff)`,
   }));
 
-  const totalItems = games.length + books.length;
+  const totalItems = games.length + books.length + movies.length + cartoons.length + animes.length;
 
   return (
     <>
@@ -428,23 +437,24 @@ const Home = () => {
         {/* Stat Pills */}
         <div className="home-pills" style={{ display: "grid",
           gridTemplateColumns: "repeat(4,1fr)", gap: "12px", marginBottom: "24px" }}>
-          <StatPill emoji="✅" value={stats?.total ?? (games.length + books.length)} label="Total completed" color="#7c3aed" />
-          <StatPill emoji="📚" value={stats?.by_type?.find(t => t.type === "book")?.count ?? books.length} label="Books finished" color="#10b981" />
-          <StatPill emoji="🎮" value={stats?.by_type?.find(t => t.type === "game")?.count ?? games.length} label="Games completed" color="#7c3aed" />
+          <StatPill emoji="✅" value={stats?.total ?? totalItems} label="Total completed" color="#7c3aed" />
+          <StatPill emoji="🎮" value={stats?.by_type?.find(t => t.type === "game")?.count ?? games.length} label="Games" color="#7c3aed" />
+          <StatPill emoji="📚" value={stats?.by_type?.find(t => t.type === "book")?.count ?? books.length} label="Books" color="#10b981" />
           <StatPill emoji="⭐" value={stats?.avg_rating ?? (() => {
-            const rated = [...games, ...books].filter(i => i.rating);
+            const allItems = [...games, ...books, ...movies, ...cartoons, ...animes];
+            const rated = allItems.filter(i => i.rating);
             return rated.length ? (rated.reduce((s,i) => s + i.rating, 0) / rated.length).toFixed(1) : "—";
           })()} label="Avg rating" color="#f59e0b" />
         </div>
 
-        {/* Main grid */}
+        {/* Main grid: Games | Song widget | Books */}
         <div className="home-main-grid" style={{ display: "grid",
           gridTemplateColumns: "1fr 280px 1fr", gap: "16px", marginBottom: "16px" }}>
 
           <Block title="🎮 Completed Games" accent="#7c3aed" minHeight="320px">
             {loading ? <Loader /> : games.length === 0
               ? <EmptyState emoji="🎮" text="No games completed yet" />
-              : <ChromaGrid items={toGridItems(games, true)} columns={3} rows={2} radius={250} />}
+              : <ChromaGrid items={toGridItems(games, "#7c3aed")} columns={3} rows={2} radius={250} />}
           </Block>
 
           <SongOfDayWidget top100={top100} />
@@ -452,7 +462,30 @@ const Home = () => {
           <Block title="📚 Completed Books" accent="#10b981" minHeight="320px">
             {loading ? <Loader /> : books.length === 0
               ? <EmptyState emoji="📚" text="No books completed yet" />
-              : <ChromaGrid items={toGridItems(books, false)} columns={3} rows={2} radius={250} />}
+              : <ChromaGrid items={toGridItems(books, "#10b981")} columns={3} rows={2} radius={250} />}
+          </Block>
+        </div>
+
+        {/* Second row: Movies | Cartoons | Anime */}
+        <div className="home-main-grid" style={{ display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+
+          <Block title="🎬 Watched Movies" accent="#ef4444" minHeight="260px">
+            {loading ? <Loader /> : movies.length === 0
+              ? <EmptyState emoji="🎬" text="No movies watched yet" />
+              : <ChromaGrid items={toGridItems(movies, "#ef4444")} columns={3} rows={2} radius={250} />}
+          </Block>
+
+          <Block title="🎨 Watched Cartoons" accent="#f59e0b" minHeight="260px">
+            {loading ? <Loader /> : cartoons.length === 0
+              ? <EmptyState emoji="🎨" text="No cartoons watched yet" />
+              : <ChromaGrid items={toGridItems(cartoons, "#f59e0b")} columns={3} rows={2} radius={250} />}
+          </Block>
+
+          <Block title="⛩️ Watched Anime" accent="#ec4899" minHeight="260px">
+            {loading ? <Loader /> : animes.length === 0
+              ? <EmptyState emoji="⛩️" text="No anime watched yet" />
+              : <ChromaGrid items={toGridItems(animes, "#ec4899")} columns={3} rows={2} radius={250} />}
           </Block>
         </div>
 

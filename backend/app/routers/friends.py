@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from .. import models, schemas
 from ..auth_utils import get_db, get_current_user
+import json
 
 router = APIRouter(prefix="/friends", tags=["friends"])
 
@@ -252,11 +253,30 @@ def public_profile(
         is_friend = f is not None
 
     profile = user.profile
+
+    # Parse hidden categories set by the profile owner
+    hidden_cats = []
+    viewing_own = (user.id == current_user.id)
+    if profile and profile.hidden_categories:
+        try:
+            hidden_cats = json.loads(profile.hidden_categories)
+        except Exception:
+            hidden_cats = []
+
     items = None
-    if not user.is_private or is_friend or user.id == current_user.id:
+    if not user.is_private or is_friend or viewing_own:
         items = db.query(models.Item).filter(
             models.Item.user_id == user.id
         ).order_by(models.Item.id.desc()).all()
+
+    def visible(i):
+        # Hidden items and hidden categories are never shown on public profile,
+        # even for the owner — so they can see exactly what friends see
+        if i.is_hidden:
+            return False
+        if i.type in hidden_cats:
+            return False
+        return True
 
     return {
         "user_id": user.id,
@@ -268,13 +288,15 @@ def public_profile(
         "title": profile.title if profile else None,
         "handle": profile.handle if profile else None,
         "song_of_day": profile.song_of_day if profile else None,
+        "hidden_categories": hidden_cats if viewing_own else [],
         "items": [
             {
                 "id": i.id, "name": i.name, "type": i.type,
                 "cover_url": i.cover_url, "rating": i.rating,
                 "status": i.status,
+                "is_hidden": i.is_hidden,
                 "finished_date": str(i.finished_date) if i.finished_date else None,
             }
-            for i in (items or [])
+            for i in (items or []) if visible(i)
         ],
     }

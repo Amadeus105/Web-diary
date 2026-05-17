@@ -1,13 +1,22 @@
 import { useState } from "react";
-import { searchBooks, searchGames, createItem } from "../services/api";
+import { searchBooks, searchGames, searchMovies, searchCartoons, searchAnime, createItem } from "../services/api";
+
+const TYPE_META = {
+  books:    { label: "📚 Books",    accent: "#7c3aed", emoji: "📚", type: "book" },
+  games:    { label: "🎮 Games",    accent: "#10b981", emoji: "🎮", type: "game" },
+  movies:   { label: "🎬 Movies",   accent: "#ef4444", emoji: "🎬", type: "movie" },
+  cartoons: { label: "🎨 Cartoons", accent: "#f59e0b", emoji: "🎨", type: "cartoon" },
+  anime:    { label: "⛩️ Anime",    accent: "#ec4899", emoji: "⛩️", type: "anime" },
+};
 
 /* ─── Add Modal ─────────────────────────────────────────── */
 const AddModal = ({ item, onClose, onAdded }) => {
-  const [status, setStatus]           = useState("completed");
-  const [rating, setRating]           = useState("");
+  const [status, setStatus]             = useState("completed");
+  const [rating, setRating]             = useState("");
   const [finishedDate, setFinishedDate] = useState("");
-  const [notes, setNotes]             = useState("");
-  const [loading, setLoading]         = useState(false);
+  const [notes, setNotes]               = useState("");
+  const [loading, setLoading]           = useState(false);
+  const accent = TYPE_META[item.tabType]?.accent ?? "#7c3aed";
 
   const handleAdd = async () => {
     setLoading(true);
@@ -36,7 +45,7 @@ const AddModal = ({ item, onClose, onAdded }) => {
     fontSize: "11px", fontWeight: "700", letterSpacing: "0.8px",
     marginBottom: "5px", textTransform: "uppercase",
   };
-  const focus = e => (e.target.style.borderColor = "#7c3aed");
+  const focus = e => (e.target.style.borderColor = accent);
   const blur  = e => (e.target.style.borderColor = "var(--block-border)");
 
   return (
@@ -48,10 +57,9 @@ const AddModal = ({ item, onClose, onAdded }) => {
       <div onClick={e => e.stopPropagation()} style={{
         width: "100%", maxWidth: "460px",
         background: "var(--block-bg)", backdropFilter: "blur(24px)",
-        borderRadius: "20px", border: "1px solid var(--block-border)",
+        borderRadius: "20px", border: `1px solid ${accent}44`,
         overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
       }}>
-        {/* Cover strip */}
         {item.cover && (
           <div style={{
             height: "140px",
@@ -63,11 +71,6 @@ const AddModal = ({ item, onClose, onAdded }) => {
             <div style={{ position: "absolute", bottom: "14px", left: "18px", right: "18px" }}>
               <p style={{ color: "white", fontWeight: "900", fontSize: "16px",
                 margin: 0, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>{item.title}</p>
-              {item.authors && (
-                <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "12px", margin: "2px 0 0" }}>
-                  {item.authors.join(", ")}
-                </p>
-              )}
             </div>
           </div>
         )}
@@ -80,12 +83,11 @@ const AddModal = ({ item, onClose, onAdded }) => {
             </h3>
           )}
 
-          {/* Status toggle */}
           <div style={{ marginBottom: "16px" }}>
             <label style={labelStyle}>Add to</label>
             <div style={{ display: "flex", gap: "8px" }}>
               {[
-                { value: "completed", label: "✅ Completed", color: "linear-gradient(135deg,#7c3aed,#5b21b6)" },
+                { value: "completed", label: "✅ Completed", color: `linear-gradient(135deg,${accent},${accent}cc)` },
                 { value: "wishlist",  label: "🔖 Wishlist",  color: "linear-gradient(135deg,#f59e0b,#d97706)" },
               ].map(({ value, label, color }) => (
                 <button key={value} type="button" onClick={() => setStatus(value)} style={{
@@ -99,7 +101,6 @@ const AddModal = ({ item, onClose, onAdded }) => {
             </div>
           </div>
 
-          {/* Completed-only fields */}
           {status === "completed" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "14px" }}>
               <div>
@@ -129,7 +130,7 @@ const AddModal = ({ item, onClose, onAdded }) => {
           <div style={{ marginBottom: "20px" }}>
             <label style={labelStyle}>Notes (optional)</label>
             <textarea style={{ ...inputStyle, minHeight: "70px", resize: "vertical" }}
-              placeholder={status === "wishlist" ? "Why do you want to read/play this?" : "Your thoughts..."}
+              placeholder="Your thoughts..."
               value={notes} onChange={e => setNotes(e.target.value)}
               onFocus={focus} onBlur={blur} />
           </div>
@@ -140,7 +141,7 @@ const AddModal = ({ item, onClose, onAdded }) => {
               background: loading ? "rgba(124,58,237,0.4)"
                 : status === "wishlist"
                   ? "linear-gradient(135deg,#f59e0b,#d97706)"
-                  : "linear-gradient(135deg,#7c3aed,#5b21b6)",
+                  : `linear-gradient(135deg,${accent},${accent}cc)`,
               color: "white", fontWeight: "700", fontSize: "14px",
               cursor: loading ? "not-allowed" : "pointer",
             }}>
@@ -160,9 +161,10 @@ const AddModal = ({ item, onClose, onAdded }) => {
 };
 
 /* ─── Result Card ───────────────────────────────────────── */
-const ResultCard = ({ item, onAdd }) => {
+const ResultCard = ({ item, tabType, onAdd }) => {
   const [hovered, setHovered] = useState(false);
-  const accent = item.type === "book" ? "#7c3aed" : "#10b981";
+  const meta   = TYPE_META[tabType] ?? TYPE_META.books;
+  const accent = meta.accent;
 
   return (
     <div
@@ -180,7 +182,6 @@ const ResultCard = ({ item, onAdd }) => {
           : "0 4px 16px rgba(0,0,0,0.07)",
       }}
     >
-      {/* Cover */}
       <div style={{
         height: "180px", flexShrink: 0, position: "relative",
         background: item.cover
@@ -191,7 +192,7 @@ const ResultCard = ({ item, onAdd }) => {
           <div style={{ position: "absolute", inset: 0, display: "flex",
             alignItems: "center", justifyContent: "center",
             fontSize: "48px", opacity: 0.3 }}>
-            {item.type === "book" ? "📚" : "🎮"}
+            {meta.emoji}
           </div>
         )}
         <div style={{
@@ -200,11 +201,10 @@ const ResultCard = ({ item, onAdd }) => {
           background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)",
           color: accent, fontSize: "11px", fontWeight: "700",
         }}>
-          {item.type === "book" ? "📚 Book" : "🎮 Game"}
+          {meta.emoji} {meta.type}
         </div>
       </div>
 
-      {/* Info */}
       <div style={{ padding: "14px", flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
         <h4 style={{
           margin: 0, color: "var(--text-color)", fontWeight: "700",
@@ -220,20 +220,13 @@ const ResultCard = ({ item, onAdd }) => {
           </p>
         )}
 
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-          {item.year && (
-            <span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px",
-              background: "rgba(255,255,255,0.06)", color: "var(--text-color)", opacity: 0.55 }}>
-              📅 {item.year}
-            </span>
-          )}
-          {item.genre?.slice(0, 1).map(g => (
-            <span key={g} style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px",
-              background: `${accent}18`, color: accent, fontWeight: "600" }}>
-              {g}
-            </span>
-          ))}
-        </div>
+        {item.year && (
+          <span style={{ padding: "2px 8px", borderRadius: "20px", fontSize: "11px",
+            background: "rgba(255,255,255,0.06)", color: "var(--text-color)", opacity: 0.55,
+            width: "fit-content" }}>
+            📅 {item.year}
+          </span>
+        )}
 
         {item.description && (
           <p style={{
@@ -244,7 +237,7 @@ const ResultCard = ({ item, onAdd }) => {
         )}
 
         <button
-          onClick={() => onAdd(item)}
+          onClick={() => onAdd({ ...item, tabType })}
           style={{
             marginTop: "auto", padding: "9px", borderRadius: "10px", border: "none",
             background: hovered
@@ -263,10 +256,26 @@ const ResultCard = ({ item, onAdd }) => {
 };
 
 /* ─── Main Page ─────────────────────────────────────────── */
+const SEARCH_FNS = {
+  books:    searchBooks,
+  games:    searchGames,
+  movies:   searchMovies,
+  cartoons: searchCartoons,
+  anime:    searchAnime,
+};
+
+const PLACEHOLDERS = {
+  books:    "Search books, authors...",
+  games:    "Search games, studios...",
+  movies:   "Search movies...",
+  cartoons: "Search cartoons...",
+  anime:    "Search anime...",
+};
+
 const CatalogPage = () => {
   const [query, setQuery]           = useState("");
   const [results, setResults]       = useState([]);
-  const [type, setType]             = useState("books");
+  const [tab, setTab]               = useState("books");
   const [loading, setLoading]       = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [toast, setToast]           = useState(null);
@@ -282,16 +291,20 @@ const CatalogPage = () => {
     if (!query.trim()) return;
     setLoading(true);
     setSearched(true);
-    const data = type === "books" ? await searchBooks(query) : await searchGames(query);
+    const fn = SEARCH_FNS[tab];
+    const data = await fn(query);
     setResults(data);
     setLoading(false);
   };
 
-  const switchType = (t) => {
-    setType(t);
+  const switchTab = (t) => {
+    setTab(t);
     setResults([]);
     setSearched(false);
+    setQuery("");
   };
+
+  const accent = TYPE_META[tab]?.accent ?? "#7c3aed";
 
   return (
     <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "24px 16px 60px" }}>
@@ -303,7 +316,7 @@ const CatalogPage = () => {
           🔍 Catalog
         </h1>
         <p style={{ color: "var(--text-color)", opacity: 0.45, fontSize: "14px", margin: 0 }}>
-          Search for games and books to add to your library
+          Search for games, books, movies, cartoons and anime
         </p>
       </div>
 
@@ -315,19 +328,18 @@ const CatalogPage = () => {
         boxShadow: "0 4px 24px rgba(0,0,0,0.07)",
       }}>
         {/* Type tabs */}
-        <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-          {[
-            { value: "books", label: "📚 Books" },
-            { value: "games", label: "🎮 Games" },
-          ].map(({ value, label }) => (
-            <button key={value} onClick={() => switchType(value)} style={{
-              padding: "8px 20px", borderRadius: "30px", cursor: "pointer",
-              border: type === value ? "none" : "1px solid var(--block-border)",
-              background: type === value ? "linear-gradient(135deg,#7c3aed,#5b21b6)" : "transparent",
-              color: type === value ? "white" : "var(--text-color)",
+        <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+          {Object.entries(TYPE_META).map(([key, meta]) => (
+            <button key={key} onClick={() => switchTab(key)} style={{
+              padding: "8px 18px", borderRadius: "30px", cursor: "pointer",
+              border: tab === key ? "none" : "1px solid var(--block-border)",
+              background: tab === key
+                ? `linear-gradient(135deg, ${meta.accent}, ${meta.accent}cc)`
+                : "transparent",
+              color: tab === key ? "white" : "var(--text-color)",
               fontWeight: "700", fontSize: "13px", transition: "all 0.2s",
-              opacity: type === value ? 1 : 0.55,
-            }}>{label}</button>
+              opacity: tab === key ? 1 : 0.55,
+            }}>{meta.label}</button>
           ))}
         </div>
 
@@ -336,22 +348,23 @@ const CatalogPage = () => {
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder={type === "books" ? "Search books, authors..." : "Search games, studios..."}
+            placeholder={PLACEHOLDERS[tab]}
             style={{
               flex: 1, padding: "12px 16px", borderRadius: "12px",
               border: "1px solid var(--block-border)", background: "rgba(255,255,255,0.04)",
               color: "var(--text-color)", fontSize: "15px", outline: "none",
               transition: "border-color 0.2s",
             }}
-            onFocus={e => (e.target.style.borderColor = "#7c3aed")}
+            onFocus={e => (e.target.style.borderColor = accent)}
             onBlur={e => (e.target.style.borderColor = "var(--block-border)")}
           />
           <button type="submit" disabled={loading} style={{
             padding: "12px 24px", borderRadius: "12px", border: "none",
-            background: loading ? "rgba(124,58,237,0.4)" : "linear-gradient(135deg,#7c3aed,#5b21b6)",
+            background: loading
+              ? "rgba(124,58,237,0.4)"
+              : `linear-gradient(135deg, ${accent}, ${accent}cc)`,
             color: "white", fontWeight: "700", fontSize: "14px",
             cursor: loading ? "not-allowed" : "pointer", whiteSpace: "nowrap",
-            transition: "background 0.2s",
           }}>
             {loading ? "⏳ Searching..." : "Search"}
           </button>
@@ -367,19 +380,17 @@ const CatalogPage = () => {
         </p>
       )}
 
-      {/* Empty / initial state */}
+      {/* Empty state */}
       {!searched && !loading && (
         <div style={{ textAlign: "center", padding: "60px 20px",
           color: "var(--text-color)", opacity: 0.3 }}>
           <div style={{ fontSize: "56px", marginBottom: "12px" }}>
-            {type === "books" ? "📚" : "🎮"}
+            {TYPE_META[tab]?.emoji}
           </div>
           <p style={{ fontSize: "15px", fontWeight: "700", margin: "0 0 4px" }}>
-            Search for {type} above
+            Search for {tab} above
           </p>
-          <p style={{ fontSize: "13px", margin: 0 }}>
-            Results will appear here
-          </p>
+          <p style={{ fontSize: "13px", margin: 0 }}>Results will appear here</p>
         </div>
       )}
 
@@ -391,12 +402,11 @@ const CatalogPage = () => {
           gap: "16px",
         }}>
           {results.map(item => (
-            <ResultCard key={item.id} item={item} onAdd={setSelectedItem} />
+            <ResultCard key={item.id} item={item} tabType={tab} onAdd={setSelectedItem} />
           ))}
         </div>
       )}
 
-      {/* Add modal */}
       {selectedItem && (
         <AddModal
           item={selectedItem}
@@ -405,7 +415,6 @@ const CatalogPage = () => {
         />
       )}
 
-      {/* Toast notification */}
       {toast && (
         <div style={{
           position: "fixed", bottom: "28px", left: "50%",
@@ -416,11 +425,10 @@ const CatalogPage = () => {
           color: "white", padding: "12px 24px", borderRadius: "30px",
           fontWeight: "700", fontSize: "14px", zIndex: 9999,
           boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
-          animation: "fadeUp 0.3s ease",
-          whiteSpace: "nowrap",
+          animation: "fadeUp 0.3s ease", whiteSpace: "nowrap",
         }}>
           <style>{`@keyframes fadeUp { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }`}</style>
-          {toast.status === "wishlist" ? "🔖" : "✅"} "{toast.title}" added to {toast.status === "wishlist" ? "Wishlist" : "Completed"}!
+          {toast.status === "wishlist" ? "🔖" : "✅"} "{toast.title}" added!
         </div>
       )}
     </div>

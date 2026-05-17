@@ -28,6 +28,7 @@ class ItemUpdate(BaseModel):
 class Item(ItemBase):
     id: int
     user_id: int
+    is_hidden: bool = False
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -97,6 +98,7 @@ class ProfileCreate(ProfileBase):
 class Profile(ProfileBase):
     id: int
     user_id: int
+    hidden_categories: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -98,6 +98,23 @@ def mark_complete(
     db.commit()
     return item
 
+@router.patch("/items/{item_id}/toggle-hidden")
+def toggle_hidden(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    item = db.query(models.Item).filter(
+        models.Item.id == item_id,
+        models.Item.user_id == current_user.id
+    ).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    item.is_hidden = not item.is_hidden
+    db.commit()
+    return {"is_hidden": item.is_hidden}
+
+
 @router.get("/items/export")
 def export_items(
     db: Session = Depends(get_db),

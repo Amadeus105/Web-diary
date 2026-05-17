@@ -10,8 +10,106 @@ const STYLES = `
 @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
 `;
 
-const TYPE_ACCENT = { game: "#10b981", book: "#7c3aed" };
-const TYPE_EMOJI  = { game: "🎮", book: "📚" };
+const TYPE_ACCENT = {
+  game:    "#10b981",
+  book:    "#7c3aed",
+  movie:   "#ef4444",
+  cartoon: "#f59e0b",
+  anime:   "#ec4899",
+};
+const TYPE_EMOJI = {
+  game:    "🎮",
+  book:    "📚",
+  movie:   "🎬",
+  cartoon: "🎨",
+  anime:   "⛩️",
+};
+
+/* ─── Small item card for profile ──────────────────────── */
+const ProfileItemCard = ({ item, i }) => {
+  const accent = TYPE_ACCENT[item.type] ?? "#7c3aed";
+  return (
+    <div style={{
+      borderRadius: "16px",
+      border: "1px solid var(--block-border)",
+      background: "var(--block-bg)", overflow: "hidden",
+      animation: `fadeUp 0.3s ease ${i * 0.03}s both`,
+    }}>
+      <div style={{
+        height: "130px",
+        background: item.cover_url
+          ? `url(${item.cover_url}) center/cover no-repeat`
+          : `${accent}18`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "36px", position: "relative",
+      }}>
+        {!item.cover_url && (TYPE_EMOJI[item.type] ?? "📄")}
+        <div style={{
+          position: "absolute", top: "8px", left: "8px",
+          padding: "2px 8px", borderRadius: "20px",
+          background: "rgba(0,0,0,0.55)", color: accent,
+          fontSize: "10px", fontWeight: "700",
+        }}>
+          {TYPE_EMOJI[item.type]} {item.type}
+        </div>
+        {item.status === "wishlist" && (
+          <div style={{
+            position: "absolute", top: "8px", right: "8px",
+            padding: "2px 8px", borderRadius: "20px",
+            background: "rgba(0,0,0,0.55)", color: "#f59e0b",
+            fontSize: "10px", fontWeight: "700",
+          }}>📋</div>
+        )}
+      </div>
+      <div style={{ padding: "10px 12px" }}>
+        <p style={{ color: "var(--text-color)", fontWeight: "700", fontSize: "13px",
+          margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis",
+          whiteSpace: "nowrap" }}>{item.name}</p>
+        {item.rating && (
+          <p style={{ color: "#f59e0b", fontSize: "11px", margin: 0 }}>
+            {"★".repeat(Math.min(item.rating, 5))} {item.rating}/10
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ─── Collapsible section block ─────────────────────────── */
+const SectionBlock = ({ title, accent, emoji, items }) => {
+  const [collapsed, setCollapsed] = useState(false);
+  if (!items || items.length === 0) return null;
+  return (
+    <div style={{ marginBottom: "28px" }}>
+      <div style={{
+        display: "flex", alignItems: "center", gap: "10px",
+        marginBottom: "14px", cursor: "pointer",
+      }} onClick={() => setCollapsed(c => !c)}>
+        <div style={{
+          width: "4px", height: "22px", borderRadius: "4px",
+          background: `linear-gradient(180deg,${accent},${accent}88)`,
+        }} />
+        <h3 style={{ margin: 0, color: "var(--text-color)", fontWeight: "800", fontSize: "16px" }}>
+          {emoji} {title}
+        </h3>
+        <span style={{ padding: "2px 10px", borderRadius: "20px", fontSize: "12px",
+          background: `${accent}18`, color: accent, fontWeight: "700" }}>
+          {items.length}
+        </span>
+        <span style={{ marginLeft: "auto", color: "var(--text-color)", opacity: 0.35, fontSize: "14px" }}>
+          {collapsed ? "▶" : "▼"}
+        </span>
+      </div>
+      {!collapsed && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: "12px" }}>
+          {items.map((item, i) => (
+            <ProfileItemCard key={item.id} item={item} i={i} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const UserProfilePage = () => {
   const { username } = useParams();
@@ -40,17 +138,30 @@ const UserProfilePage = () => {
   );
 
   const items = data.items || [];
-  const completedItems  = items.filter(i => i.status === "completed");
-  const wishlistItems   = items.filter(i => i.status === "wishlist");
-  const gameCount       = items.filter(i => i.type === "game").length;
-  const bookCount       = items.filter(i => i.type === "book").length;
-  const wishlistCount   = wishlistItems.length;
 
+  // Counts per type
+  const gameCount    = items.filter(i => i.type === "game").length;
+  const bookCount    = items.filter(i => i.type === "book").length;
+  const movieCount   = items.filter(i => i.type === "movie").length;
+  const cartoonCount = items.filter(i => i.type === "cartoon").length;
+  const animeCount   = items.filter(i => i.type === "anime").length;
+  const wishlistItems  = items.filter(i => i.status === "wishlist");
+  const wishlistCount  = wishlistItems.length;
+
+  // For "All" tab — flat grid
   const filtered =
-    filter === "all"       ? items :
-    filter === "wishlist"  ? wishlistItems :
-    filter === "completed" ? completedItems :
-    items.filter(i => i.type === filter);  // "game" | "book"
+    filter === "all"      ? items :
+    filter === "wishlist" ? wishlistItems :
+    items.filter(i => i.type === filter);
+
+  // Sections for "all" view — grouped by type
+  const showSections = filter === "all";
+
+  const gameItems    = items.filter(i => i.type === "game");
+  const bookItems    = items.filter(i => i.type === "book");
+  const movieItems   = items.filter(i => i.type === "movie");
+  const cartoonItems = items.filter(i => i.type === "cartoon");
+  const animeItems   = items.filter(i => i.type === "anime");
 
   return (
     <>
@@ -62,9 +173,9 @@ const UserProfilePage = () => {
             setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100 || 0);
         }}
       />
-      <div style={{ maxWidth: "900px", margin: "0 auto", padding: "24px 16px 60px" }}>
+      <div style={{ maxWidth: "960px", margin: "0 auto", padding: "24px 16px 60px" }}>
 
-        {/* Profile header card */}
+        {/* Profile header */}
         <div style={{
           background: "var(--block-bg)", backdropFilter: "blur(6px)",
           borderRadius: "20px", border: "1px solid var(--block-border)",
@@ -111,22 +222,14 @@ const UserProfilePage = () => {
               </p>
             )}
 
-            {/* Stats */}
-             <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-              <div>
-                <span style={{ color: "var(--text-color)", fontWeight: "900", fontSize: "20px" }}>{gameCount}</span>
-                <span style={{ color: "var(--text-color)", opacity: 0.45, fontSize: "12px", marginLeft: "5px" }}>games</span>
-              </div>
-              <div>
-                <span style={{ color: "var(--text-color)", fontWeight: "900", fontSize: "20px" }}>{bookCount}</span>
-                <span style={{ color: "var(--text-color)", opacity: 0.45, fontSize: "12px", marginLeft: "5px" }}>books</span>
-              </div>
-              {wishlistCount > 0 && (
-                <div>
-                  <span style={{ color: "var(--text-color)", fontWeight: "900", fontSize: "20px" }}>{wishlistCount}</span>
-                  <span style={{ color: "var(--text-color)", opacity: 0.45, fontSize: "12px", marginLeft: "5px" }}>wishlist</span>
-                </div>
-              )}
+            {/* Stats row */}
+            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+              {gameCount    > 0 && <StatChip value={gameCount}    label="games"    color={TYPE_ACCENT.game} />}
+              {bookCount    > 0 && <StatChip value={bookCount}    label="books"    color={TYPE_ACCENT.book} />}
+              {movieCount   > 0 && <StatChip value={movieCount}   label="movies"   color={TYPE_ACCENT.movie} />}
+              {cartoonCount > 0 && <StatChip value={cartoonCount} label="cartoons" color={TYPE_ACCENT.cartoon} />}
+              {animeCount   > 0 && <StatChip value={animeCount}   label="anime"    color={TYPE_ACCENT.anime} />}
+              {wishlistCount > 0 && <StatChip value={wishlistCount} label="wishlist" color="#f59e0b" />}
             </div>
           </div>
 
@@ -136,21 +239,13 @@ const UserProfilePage = () => {
               const s = data.song_of_day ? JSON.parse(data.song_of_day) : null;
               if (!s) return null;
               const togglePlay = async () => {
-                if (playing) {
-                  audioRef.current.pause();
-                  setPlaying(false);
-                  return;
-                }
+                if (playing) { audioRef.current.pause(); setPlaying(false); return; }
                 setLoadingPreview(true);
                 try {
                   const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(s.title + " " + s.artist)}&media=music&entity=song&limit=1`);
                   const json = await res.json();
                   const url = json.results?.[0]?.previewUrl;
-                  if (url) {
-                    audioRef.current.src = url;
-                    audioRef.current.play();
-                    setPlaying(true);
-                  }
+                  if (url) { audioRef.current.src = url; audioRef.current.play(); setPlaying(true); }
                 } catch {}
                 setLoadingPreview(false);
               };
@@ -210,7 +305,7 @@ const UserProfilePage = () => {
           </div>
         </div>
 
-        {/* Private / no items */}
+        {/* Private */}
         {data.is_private && !data.is_friend && (
           <div style={{
             background: "var(--block-bg)", borderRadius: "18px",
@@ -222,91 +317,78 @@ const UserProfilePage = () => {
           </div>
         )}
 
-        {/* Items grid */}
-        {(!data.is_private || data.is_friend) && (
+        {/* Items */}
+        {(!data.is_private || data.is_friend) && items.length > 0 && (
           <>
             {/* Filter tabs */}
-             <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
               {[
-                { key: "all",      label: `All (${items.length})` },
-                { key: "game",     label: `🎮 Games (${gameCount})` },
-                { key: "book",     label: `📚 Books (${bookCount})` },
-                ...(wishlistCount > 0 ? [{ key: "wishlist", label: `📋 Wishlist (${wishlistCount})` }] : []),
-              ].map(({ key, label }) => (
+                { key: "all",      label: `All (${items.length})`,          color: "#7c3aed" },
+                ...(gameCount    > 0 ? [{ key: "game",    label: `🎮 Games (${gameCount})`,       color: TYPE_ACCENT.game }]    : []),
+                ...(bookCount    > 0 ? [{ key: "book",    label: `📚 Books (${bookCount})`,       color: TYPE_ACCENT.book }]    : []),
+                ...(movieCount   > 0 ? [{ key: "movie",   label: `🎬 Movies (${movieCount})`,     color: TYPE_ACCENT.movie }]   : []),
+                ...(cartoonCount > 0 ? [{ key: "cartoon", label: `🎨 Cartoons (${cartoonCount})`, color: TYPE_ACCENT.cartoon }] : []),
+                ...(animeCount   > 0 ? [{ key: "anime",   label: `⛩️ Anime (${animeCount})`,      color: TYPE_ACCENT.anime }]   : []),
+                ...(wishlistCount > 0 ? [{ key: "wishlist", label: `📋 Wishlist (${wishlistCount})`, color: "#f59e0b" }] : []),
+              ].map(({ key, label, color }) => (
                 <button key={key} onClick={() => setFilter(key)} style={{
                   padding: "7px 16px", borderRadius: "20px", cursor: "pointer",
                   border: filter === key ? "none" : "1px solid var(--block-border)",
-                  background: filter === key ? "linear-gradient(135deg,#7c3aed,#5b21b6)" : "transparent",
+                  background: filter === key ? color : "transparent",
                   color: filter === key ? "white" : "var(--text-color)",
                   fontWeight: "700", fontSize: "12px", opacity: filter === key ? 1 : 0.55,
+                  transition: "all 0.2s",
                 }}>{label}</button>
               ))}
             </div>
 
-            {filtered.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "60px 20px",
-                color: "var(--text-color)", opacity: 0.3 }}>
-                <div style={{ fontSize: "40px", marginBottom: "10px" }}>📭</div>
-                <p style={{ margin: 0, fontSize: "13px" }}>Nothing here yet</p>
-              </div>
+            {/* "All" shows sections per type */}
+            {showSections ? (
+              <>
+                <SectionBlock title="Games"    accent={TYPE_ACCENT.game}    emoji="🎮" items={gameItems} />
+                <SectionBlock title="Books"    accent={TYPE_ACCENT.book}    emoji="📚" items={bookItems} />
+                <SectionBlock title="Movies"   accent={TYPE_ACCENT.movie}   emoji="🎬" items={movieItems} />
+                <SectionBlock title="Cartoons" accent={TYPE_ACCENT.cartoon} emoji="🎨" items={cartoonItems} />
+                <SectionBlock title="Anime"    accent={TYPE_ACCENT.anime}   emoji="⛩️" items={animeItems} />
+                {wishlistCount > 0 && (
+                  <SectionBlock title="Wishlist" accent="#f59e0b" emoji="📋" items={wishlistItems} />
+                )}
+                {items.length === 0 && (
+                  <EmptyState />
+                )}
+              </>
             ) : (
-              <div style={{ display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(180px,1fr))", gap: "14px" }}>
-                {filtered.map((item, i) => {
-                  const accent = TYPE_ACCENT[item.type] ?? "#7c3aed";
-                  return (
-                    <div key={item.id} style={{
-                      borderRadius: "16px",
-                      border: "1px solid var(--block-border)",
-                      background: "var(--block-bg)", overflow: "hidden",
-                      animation: `fadeUp 0.3s ease ${i * 0.03}s both`,
-                    }}>
-                      <div style={{
-                        height: "130px",
-                        background: item.cover_url
-                          ? `url(${item.cover_url}) center/cover no-repeat`
-                          : `${accent}18`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: "36px", position: "relative",
-                      }}>
-                        {!item.cover_url && (TYPE_EMOJI[item.type] ?? "📄")}
-                          <div style={{
-                          position: "absolute", top: "8px", left: "8px",
-                          padding: "2px 8px", borderRadius: "20px",
-                          background: "rgba(0,0,0,0.55)", color: accent,
-                          fontSize: "10px", fontWeight: "700",
-                        }}>
-                          {TYPE_EMOJI[item.type]} {item.type}
-                        </div>
-                        {item.status === "wishlist" && (
-                          <div style={{
-                            position: "absolute", top: "8px", right: "8px",
-                            padding: "2px 8px", borderRadius: "20px",
-                            background: "rgba(0,0,0,0.55)", color: "#f59e0b",
-                            fontSize: "10px", fontWeight: "700",
-                          }}>📋</div>
-                        )}
-                      </div>
-                      <div style={{ padding: "10px 12px" }}>
-                        <p style={{ color: "var(--text-color)", fontWeight: "700", fontSize: "13px",
-                          margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis",
-                          whiteSpace: "nowrap" }}>{item.name}</p>
-                        {item.rating && (
-                          <p style={{ color: "#f59e0b", fontSize: "11px", margin: 0 }}>
-                            {"★".repeat(Math.min(item.rating, 5))} {item.rating}/10
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              filtered.length === 0 ? <EmptyState /> : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px,1fr))", gap: "12px" }}>
+                  {filtered.map((item, i) => (
+                    <ProfileItemCard key={item.id} item={item} i={i} />
+                  ))}
+                </div>
+              )
             )}
           </>
+        )}
+
+        {(!data.is_private || data.is_friend) && items.length === 0 && (
+          <EmptyState />
         )}
       </div>
     </>
   );
 };
+
+const StatChip = ({ value, label, color }) => (
+  <div>
+    <span style={{ color: "var(--text-color)", fontWeight: "900", fontSize: "20px" }}>{value}</span>
+    <span style={{ color, opacity: 0.8, fontSize: "12px", marginLeft: "5px", fontWeight: "600" }}>{label}</span>
+  </div>
+);
+
+const EmptyState = () => (
+  <div style={{ textAlign: "center", padding: "60px 20px", color: "var(--text-color)", opacity: 0.3 }}>
+    <div style={{ fontSize: "40px", marginBottom: "10px" }}>📭</div>
+    <p style={{ margin: 0, fontSize: "13px" }}>Nothing here yet</p>
+  </div>
+);
 
 export default UserProfilePage;

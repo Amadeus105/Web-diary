@@ -37,6 +37,7 @@ class Item(Base):
     notes         = Column(String,  nullable=True)
     cover_url     = Column(String,  nullable=True)
     status        = Column(String,  nullable=False, default="completed", server_default="completed")
+    is_hidden     = Column(Boolean, nullable=False, default=False, server_default="false")
     user_id       = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     owner = relationship("User", back_populates="items")
@@ -81,7 +82,8 @@ class UserProfile(Base):
     status     = Column(String, nullable=True)
     avatar_url = Column(String, nullable=True)
     github_url = Column(String, nullable=True)
-    song_of_day = Column(Text, nullable=True)
+    song_of_day        = Column(Text, nullable=True)
+    hidden_categories  = Column(Text, nullable=True)  # JSON array e.g. ["movie","anime"]
 
     owner = relationship("User", back_populates="profile")
 
